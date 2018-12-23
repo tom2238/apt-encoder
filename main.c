@@ -12,9 +12,11 @@ double carrier_delta;  // delta phase of carrier 2400 Hz
 double deltaph2 ;  // delta phase
 int fd; //device
 FILE *InImage;
+FILE *OutImage;
+uint16_t ImageMaxRes = 0;
 uint8_t state = 0;
-AptTelemetry TelemetryA = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 255};
-AptTelemetry TelemetryB = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 255};
+AptTelemetry TelemetryA = {0, 105, 105, 105, 105, 158, 0, 60, 60, 100, 135, 164, 192, 220, 245, 255};
+AptTelemetry TelemetryB = {0, 105, 105, 105, 105, 160, 150, 160, 60, 100, 135, 165, 192, 220, 245, 255};
 //double time_taken;
 
 void *SoundThread(void *vargp) { 
@@ -22,9 +24,12 @@ void *SoundThread(void *vargp) {
       
       unsigned int i = 0; 
       unsigned int j = 0; 
+      unsigned int pix = 0;
       int AptState = 0;
       uint32_t currentline = 1; 
+      uint16_t imageline = 0;
       uint8_t frame = 1; 
+      uint8_t AptPix = 0;
       int16_t carrier = 0;
       int16_t aptdata  = 0;
       double carrier_phase=0, ph2=0;
@@ -33,7 +38,7 @@ void *SoundThread(void *vargp) {
       //clock_t t; 
       while(1) {
         //t = clock();
-        AptTrans = CreateAptLine(frame, currentline, TelemetryA, TelemetryB, InImage); 
+        /*AptTrans = CreateAptLine(frame, currentline, TelemetryA, TelemetryB, InImage); 
         currentline++;
         frame++;
         if(frame > 128) {
@@ -78,41 +83,20 @@ void *SoundThread(void *vargp) {
         for(i=11740; i<12000;i++){
           AptDataBuffer[i] = AptTrans.TelemetryB[j];
           j += (unsigned int)(j/APT_WORD_MUL_TELEM);
-        }
+        } */
         
-        /*for(i=0; i<WF_SAMPLE_RATE/WF_BUFFER_DIV; i++) {
-          if(AptState == 0) {
-            AptDataBuffer[i] = AptTrans.SyncA[(unsigned int)(i/APT_WORD_MUL)];
-          }
-          else if(AptState == 1) {
-            AptDataBuffer[i] = AptTrans.MarkerA[i];
-          }
-          else if(AptState == 2) {
-            AptDataBuffer[i] = AptTrans.VideoA[i];
-          }
-          else if(AptState == 3) {
-            AptDataBuffer[i] = AptTrans.TelemetryA[i];
-          }
-          else if(AptState == 4) {
-            AptDataBuffer[i] = AptTrans.SyncB[i];
-          }
-          else if(AptState == 5) {
-            AptDataBuffer[i] = AptTrans.MarkerB[i];
-          }
-          else if(AptState == 6) {
-            AptDataBuffer[i] = AptTrans.VideoB[i];
-          }
-          else if(AptState == 7) {
-            AptDataBuffer[i] = AptTrans.TelemetryB[i];
-          }
-            
-        }*/
+        for(i=0;i<2080;i++) {
+          pix = ReadTGAPixel(OutImage);
+          AptDataBuffer[i] = GetBlueSubPixel(pix);         
+        }
+        imageline++;
+
         //1s Sine Wave Syntheis
         for(i=0; i<WF_SAMPLE_RATE/WF_BUFFER_DIV; i++) {
-            //carrier = 150*(sin(carrier_phase)); //amplitude sine carrier wave
-            carrier = 1;
-            aptdata = 16*(AptDataBuffer[i]+128);
-            carrier = (carrier * aptdata)+carrier*40;
+            carrier = 32*(sin(carrier_phase)); //amplitude sine carrier wave
+            //carrier = 1;           
+            aptdata = (AptDataBuffer[(unsigned int)(i/5.7696)]);
+            carrier = (carrier * aptdata)+carrier*32;
             carrier_phase += carrier_delta;	
             ph2 += deltaph2;				//phase
             audio_buffer[i]=carrier;
@@ -122,10 +106,15 @@ void *SoundThread(void *vargp) {
         if(write(fd, audio_buffer, sizeof(audio_buffer)) != WF_SAMPLE_RATE/WF_BUFFER_DIV*WF_SAMPLEBITS/8) {
           perror("wrote wrong number of bytes");
         }
+        if(imageline >= ImageMaxRes) {
+          printf("\nEnd of Image\n");
+          break;
+        }
         //t = clock() - t;
         //time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds 
          
       }
+    printf("Return: 0 to exit\n");  
     return NULL; 
 } 
 
@@ -150,7 +139,73 @@ int main()
       exit(1);
     }   
     InImage = ReadTga.File;
+    OutImage = fopen("fileAPT_out.tga","wb");
     
+    //write header
+   fwrite_int(ReadTga.IDLength,1,OutImage);
+   fwrite_int(ReadTga.ColorMapType,1,OutImage);
+   fwrite_int(ReadTga.ImageType,1,OutImage);
+   fwrite_int(ReadTga.CMapStart,2,OutImage);
+   fwrite_int(ReadTga.CMapLength,2,OutImage);
+   fwrite_int(ReadTga.CMapDepth,1,OutImage);
+   fwrite_int(ReadTga.XOffset,2,OutImage);
+   fwrite_int(ReadTga.YOffset,2,OutImage);
+   fwrite_int(2080,2,OutImage);
+   fwrite_int(ReadTga.Height,2,OutImage);
+   fwrite_int(ReadTga.PixelDepth,1,OutImage);
+   fwrite_int(ReadTga.ImageDescriptor,1,OutImage);
+   ImageMaxRes = ReadTga.Height;
+   AptLine AptTrans;
+   uint8_t frame=1;
+   uint32_t currentline = 1;
+   uint8_t APTdata = 0;
+   unsigned int i,j;
+   
+   for(j=0;j<ReadTga.Height;j++) {
+   AptTrans = CreateAptLine(frame, currentline, TelemetryA, TelemetryB, InImage);
+   frame++;
+   currentline++;
+   if(frame > 128) {
+     frame = 1;
+   }                
+   for(i=0;i<39;i++) {
+     APTdata = AptTrans.SyncA[i];
+     WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
+   }
+   
+   for(i=0;i<47;i++) {
+     APTdata = AptTrans.MarkerA[i];
+     WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
+   }  
+   for(i=0;i<909;i++) {
+     APTdata = AptTrans.VideoA[i];
+     WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
+   }  
+   for(i=0;i<45;i++) {
+     APTdata = AptTrans.TelemetryA[i];
+     WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
+   }  
+   for(i=0;i<39;i++) {
+     APTdata = AptTrans.SyncB[i];
+     WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
+   } 
+   for(i=0;i<47;i++) {
+     APTdata = AptTrans.MarkerB[i];
+     WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
+   }  
+   for(i=0;i<909;i++) {
+     APTdata = AptTrans.VideoB[i];
+     WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
+   } 
+   for(i=0;i<45;i++) {
+     APTdata = AptTrans.TelemetryB[i];
+     WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
+   } 
+   }
+   
+    fclose(OutImage);
+    OutImage = fopen("fileAPT_out.tga","rb");
+    fseek(OutImage, 18, SEEK_SET);
 
     carrier_delta = WF_TPI*APT_CARRIER_F/WF_SAMPLE_RATE;  // delta phase	
     deltaph2 = WF_TPI*freq2/WF_SAMPLE_RATE;  // delta phase
