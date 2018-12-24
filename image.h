@@ -1,6 +1,8 @@
 #ifndef NA_IMAGE_R_H_   
 #define NA_IMAGE_R_H_
 
+#define IMG_TGA_HEAD_SIZE 18
+
 typedef struct {
   uint8_t IDLength;
   uint8_t ColorMapType;
@@ -33,4 +35,6 @@ int fwrite_int(int val, char len, FILE *p);
 unsigned int fread_int(char len, FILE *p);
 //Open image for transmit
 TgaImageHead OpenTgaImage(char *filename);
+//Write transmitted image
+TgaImageHead WriteTgaImage(char *filename, TgaImageHead WriteImage);
 #endif 

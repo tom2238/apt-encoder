@@ -114,12 +114,37 @@ TgaImageHead OpenTgaImage(char *filename) {
   TgaImage.ImageDescriptor = fread_int(1,filein); 
   if (TgaImage.Width != APT_VIDEO_A)  {
     printf("Image width is %d px\n",TgaImage.Width);
-    printf("Only %d px width images is supported\n",APT_VIDEO_A);
+    printf("Only %d px width images are supported\n",APT_VIDEO_A);
     fclose(filein);
     return TgaImage;
   }
   TgaImage.File = filein;
-  printf("X: %d, Y:%d Z: %d\n",TgaImage.Width,TgaImage.Height,TgaImage.PixelDepth);
+  //printf("X: %d, Y:%d Z: %d\n",TgaImage.Width,TgaImage.Height,TgaImage.PixelDepth);
   return TgaImage;  //now ready to read image data
 }
 
+TgaImageHead WriteTgaImage(char *filename, TgaImageHead WriteImage) {
+  FILE *fileout=NULL;
+  char msg[255]; 
+  WriteImage.File = NULL;
+  if((fileout = fopen(filename, "wb")) == NULL){
+    strcpy(msg, "Error opening ");
+    strcat(msg, filename);
+    perror(msg);
+    return WriteImage;
+  }
+  WriteImage.File = fileout;
+  fwrite_int(WriteImage.IDLength,1,fileout);
+  fwrite_int(WriteImage.ColorMapType,1,fileout);
+  fwrite_int(WriteImage.ImageType,1,fileout);
+  fwrite_int(WriteImage.CMapStart,2,fileout);
+  fwrite_int(WriteImage.CMapLength,2,fileout);
+  fwrite_int(WriteImage.CMapDepth,1,fileout);
+  fwrite_int(WriteImage.XOffset,2,fileout);
+  fwrite_int(WriteImage.YOffset,2,fileout);
+  fwrite_int(WriteImage.Width,2,fileout);
+  fwrite_int(WriteImage.Height,2,fileout);
+  fwrite_int(WriteImage.PixelDepth,1,fileout);
+  fwrite_int(WriteImage.ImageDescriptor,1,fileout);
+  return WriteImage;  //now ready to write image data
+}

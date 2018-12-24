@@ -81,11 +81,11 @@ AptLine CreateAptLine(uint8_t frame, uint32_t currentline, AptTelemetry ChanA, A
     Bval = GetBlueSubPixel(pix);
     gray = Rval*0.302 + Gval*0.59 + Bval*0.11;
     NewLine.VideoA[j] = gray;
-    gray = ((Rval / 32) << 5) + ((Gval / 32) << 2) + (Bval/ 64);
-    NewLine.VideoB[j] = gray; 
+    //gray = ((Rval / 32) << 5) + ((Gval / 32) << 2) + (Bval/ 64);
+    NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
   }
   // Marker A and Marker B
-  minute = currentline % 120;
+  minute = currentline % APT_MARKER_SIZE;
   if(minute==0 || minute==1) {
     minute = 1;
   }
@@ -166,4 +166,42 @@ AptLine CreateAptLine(uint8_t frame, uint32_t currentline, AptTelemetry ChanA, A
     NewLine.TelemetryB[i]=telemetryB;
   }
   return NewLine;
+}
+//Concat AptLine to one array
+AptLineAr ConcatAptLine(AptLine Apt) {
+  int i,j=0;
+  AptLineAr AptAr;
+  for(i=0;i<APT_SYNC_A;i++) {
+     AptAr.Value[j] = Apt.SyncA[i];
+     j++;
+  }
+   for(i=0;i<APT_MARKER_A;i++) {
+     AptAr.Value[j] = Apt.MarkerA[i];
+     j++;
+   }  
+   for(i=0;i<APT_VIDEO_A;i++) {
+     AptAr.Value[j] = Apt.VideoA[i];
+     j++;
+   }  
+   for(i=0;i<APT_TELEMETRY_A;i++) {
+     AptAr.Value[j] = Apt.TelemetryA[i];
+     j++;
+   }  
+   for(i=0;i<APT_SYNC_B;i++) {
+     AptAr.Value[j] = Apt.SyncB[i];
+     j++;
+   } 
+   for(i=0;i<APT_MARKER_B;i++) {
+     AptAr.Value[j] = Apt.MarkerB[i];
+     j++;
+   }  
+   for(i=0;i<APT_VIDEO_B;i++) {
+     AptAr.Value[j] = Apt.VideoB[i];
+     j++;
+   } 
+   for(i=0;i<APT_TELEMETRY_B;i++) {
+     AptAr.Value[j] = Apt.TelemetryB[i];
+     j++;
+   } 
+   return AptAr;
 }
