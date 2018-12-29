@@ -13,7 +13,7 @@ void *SoundThread(void *vargp) {
       unsigned int i = 0; 
       unsigned int pix = 0;
       uint16_t imageline = 0;
-      uint8_t AptPix = 0;
+      //uint8_t AptPix = 0;
       int16_t carrier = 0;
       int16_t aptdata  = 0;
       double carrier_phase=0; // current phase 
@@ -23,7 +23,7 @@ void *SoundThread(void *vargp) {
       while(1) {
         t = clock();
         
-        for(i=0;i<2080;i++) {
+        for(i=0;i<APT_LINE_SIZE;i++) {
           pix = ReadTGAPixel(OutImage);
           AptDataBuffer[i] = GetBlueSubPixel(pix);         
         }
@@ -60,15 +60,16 @@ void *SoundThread(void *vargp) {
 
 int main()
 {
-    TgaImageHead ReadTga = OpenTgaImage("IMG_2590.tga");
+	printf("Build: %s %s, GCC %s\n", __TIME__, __DATE__, __VERSION__);
+    AudioDevice = InitAudioDevice();
+    if(AudioDevice < 0) {
+      exit(1);
+    }	
+	TgaImageHead ReadTga = OpenTgaImage("IMG_2590.tga");
     if(ReadTga.File == NULL) {    
       exit(1);
     }
-    AudioDevice = InitAudioDevice();
-    if(AudioDevice < 0) {
-      fclose(ReadTga.File);
-      exit(1);
-    }   
+       
     InImage = ReadTga.File;
 
     OutImage = fopen("fileAPT_out.tga","wb");
@@ -83,7 +84,7 @@ int main()
    fwrite_int(ReadTga.CMapDepth,1,OutImage);
    fwrite_int(ReadTga.XOffset,2,OutImage);
    fwrite_int(ReadTga.YOffset,2,OutImage);
-   fwrite_int(2080,2,OutImage);
+   fwrite_int(APT_LINE_SIZE,2,OutImage);
    fwrite_int(ReadTga.Height,2,OutImage);
    fwrite_int(ReadTga.PixelDepth,1,OutImage);
    fwrite_int(ReadTga.ImageDescriptor,1,OutImage);

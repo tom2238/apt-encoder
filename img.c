@@ -71,7 +71,6 @@ int main() {
   
    printf("X: %d, Y:%d Z: %d\n",ReadTga.Width,ReadTga.Height,ReadTga.PixelDepth);
    
-   
    uint8_t gray = 0;
    uint8_t Rval;
    uint8_t Gval;

@@ -1,5 +1,9 @@
 *.tga
 *.jpg
+*.txt
 images/
+Debug/
+.codelite/
 apt_audio
+noaa_apt
 imgc
