@@ -1,6 +1,5 @@
 #include "main.h"
 #include "aptcode.h"
-#include "image.h"
 
 uint8_t AptSyncA(uint8_t word) {
   //word in range 0 to 38 , total 39 values 
@@ -53,7 +52,7 @@ uint8_t AptMarkerB(uint8_t word, uint8_t minute) {
   }
 }
 
-AptLine CreateAptLine(uint8_t frame, uint32_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image) {
+AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image) {
   //frame, number in range 1 to 128, current line in frame
   //currentline, number in range 1 to inf
   //image is pointer to file, transmitted image
@@ -75,14 +74,20 @@ AptLine CreateAptLine(uint8_t frame, uint32_t currentline, AptTelemetry ChanA, A
   } 
   // Video A and Video B
   for(j=0;j<APT_VIDEO_A;j++) {
-    pix = ReadTGAPixel(image);
-    Rval = GetRedSubPixel(pix);
-    Gval = GetGreenSubPixel(pix);
-    Bval = GetBlueSubPixel(pix);
-    gray = Rval*0.302 + Gval*0.59 + Bval*0.11;
-    NewLine.VideoA[j] = gray;
-    //gray = ((Rval / 32) << 5) + ((Gval / 32) << 2) + (Bval/ 64);
-    NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
+	if(image==NULL) {
+      NewLine.VideoA[j] = 0;
+	  NewLine.VideoB[j] = 0;
+	}
+	else {
+      pix = ReadTGAPixel(image);
+      Rval = GetRedSubPixel(pix);
+      Gval = GetGreenSubPixel(pix);
+      Bval = GetBlueSubPixel(pix);
+      gray = Rval*0.302 + Gval*0.59 + Bval*0.11;
+      NewLine.VideoA[j] = gray;
+      //gray = ((Rval / 32) << 5) + ((Gval / 32) << 2) + (Bval/ 64);
+      NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
+	}
   }
   // Marker A and Marker B
   minute = currentline % APT_MARKER_SIZE;
@@ -204,4 +209,14 @@ AptLineAr ConcatAptLine(AptLine Apt) {
      j++;
    } 
    return AptAr;
+}
+
+AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead tgahead, AptTelemetry telemA, AptTelemetry telemB){
+  AptLineAr result;
+  AptLine AptTrans;
+  
+  AptTrans = CreateAptLine(frame, currentline, telemA, telemB, tgahead.File);			
+  result = ConcatAptLine(AptTrans);
+
+  return result;	
 }

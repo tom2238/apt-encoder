@@ -1,5 +1,6 @@
 #ifndef NOAA_APT_GEN_H_   
 #define NOAA_APT_GEN_H_
+#include "image.h"
 // A channel
 #define APT_SYNC_A 39
 #define APT_MARKER_A 47
@@ -66,8 +67,10 @@ uint8_t AptMarkerA(uint8_t word, uint8_t minute);
 //Marker B channel
 uint8_t AptMarkerB(uint8_t word, uint8_t minute);
 //Create one line of apt, frame is number in 0 to 127, Seperate telemetry info for each channel
-AptLine CreateAptLine(uint8_t frame, uint32_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image);
+AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image);
 //Concat AptLine to AptLineAr
 AptLineAr ConcatAptLine(AptLine Apt);
+//Load one image line
+AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead tgahead, AptTelemetry telemA, AptTelemetry telemB);
 
 #endif 

@@ -1,8 +1,8 @@
 .PHONY: clean All
 
 All:
-	@echo "----------Building project:[ noaa_apt - Debug ]----------"
+	@echo "----------Sestavování projektu:[ noaa_apt - Debug ]----------"
 	@$(MAKE) -f  "noaa_apt.mk"
 clean:
-	@echo "----------Cleaning project:[ noaa_apt - Debug ]----------"
+	@echo "----------Čištění projektu:[ noaa_apt - Debug ]----------"
 	@$(MAKE) -f  "noaa_apt.mk" clean
