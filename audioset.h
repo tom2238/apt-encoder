@@ -23,6 +23,6 @@
 
 int16_t audio_buffer[WF_SAMPLE_RATE/WF_BUFFER_DIV];
 
-int InitAudioDevice(void);
+int InitAudioDevice(char *device);
 
 #endif 

@@ -13,12 +13,24 @@
 #include <pthread.h>
 #include <time.h>
 #include <getopt.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#define _APT_FILE_NO_SET "σame"
+#define _APT_AUDIO_DEVICE "/dev/dsp"
+
+typedef struct {
+	char *device;
+	char *filename;
+	uint8_t loop;
+	uint8_t console;
+}AptOptSettings;
 
 void *SoundThread(void *vargp); //Audio thread 
 int AudioDevice; //audio device
-FILE *InImage; //Input image
-FILE *OutImage;//Output image
 
-uint16_t ImageMaxRes; //Maximum image resolution
+//uint16_t ImageMaxRes; //Maximum image resolution
+
+void Usage(char *p_name);
 
 #endif

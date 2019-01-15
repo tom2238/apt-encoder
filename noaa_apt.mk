@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=
-Date                   :=10.1.2019
+Date                   :=15.1.2019
 CodeLitePath           :="/home/guest/.codelite"
 LinkerName             :=gcc
 SharedObjectLinkerName :=gcc -shared -fPIC
@@ -39,8 +39,8 @@ LinkOptions            :=  -O0
 IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch). 
 IncludePCH             := 
 RcIncludePath          := 
-Libs                   := $(LibrarySwitch)pthread $(LibrarySwitch)m 
-ArLibs                 :=  "pthread" "m" 
+Libs                   := $(LibrarySwitch)pthread $(LibrarySwitch)m $(LibrarySwitch)readline $(LibrarySwitch)termcap 
+ArLibs                 :=  "pthread" "m" "readline" "termcap" 
 LibPath                := $(LibraryPathSwitch). $(LibraryPathSwitch). $(LibraryPathSwitch)Debug 
 
 ##

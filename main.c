@@ -8,6 +8,8 @@ AptTelemetry TelemetryB = {0, 105, 105, 105, 105, 160, 150, 160, 60, 100, 135, 1
 
 double time_taken;
 TgaImageHead ReadTga;
+AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,0,0};
+FILE *RGfile=NULL; 
 
 void *SoundThread(void *vargp) { 
       //Sound Buffer    
@@ -26,13 +28,7 @@ void *SoundThread(void *vargp) {
       clock_t t; 
       while(1) {
         t = clock();
-        /*
-        for(i=0;i<APT_LINE_SIZE;i++) {
-          pix = ReadTGAPixel(OutImage);
-          AptDataBuffer[i] = GetBlueSubPixel(pix);         
-        }*/
-		
-		//for(j=0;j<ReadTga.Height;j++) {
+
 		ConvLine = AptTransImageLine(frame, currentline, ReadTga, TelemetryA, TelemetryB);  
 		frame++;
 		currentline++;
@@ -41,14 +37,11 @@ void *SoundThread(void *vargp) {
 		}    
 		if(currentline > APT_MARKER_SIZE) {
 			currentline = 1;
-		}            
-		//}
-        imageline++;
+		}                   
 
-        //1s Sine Wave Syntheis
+        //0.5s One line wave syntheis
         for(i=0; i<WF_SAMPLE_RATE/WF_BUFFER_DIV; i++) {
-            carrier = 32*(sin(carrier_phase)); //amplitude sine carrier wave
-            //carrier = 1;           
+            carrier = 32*(sin(carrier_phase)); //amplitude sine carrier wave           
             //aptdata = (AptDataBuffer[(unsigned int)(i/APT_WORD_MUL)]);
 			aptdata = (ConvLine.Value[(unsigned int)(i/APT_WORD_MUL)]);
             carrier = (carrier * aptdata)+carrier*32;
@@ -56,123 +49,150 @@ void *SoundThread(void *vargp) {
             audio_buffer[i]=carrier;
         }
         
-        
         if(write(AudioDevice, audio_buffer, sizeof(audio_buffer)) != WF_SAMPLE_RATE/WF_BUFFER_DIV*WF_SAMPLEBITS/8) {
-          perror("wrote wrong number of bytes");
+          perror("Wrote wrong number of bytes");
         }
+		if(ReadTga.File!=NULL) {
+		  imageline++;
+		}
         if(imageline >= ReadTga.Height) {
-          printf("\nEnd of Image\nAnother loop\n");
-          fseek(ReadTga.File, IMG_TGA_HEAD_SIZE, SEEK_SET);
-          imageline = 0;
-          
-          //break;
+		  if(aptoptions.loop) {
+            printf("End of image. Another loop.\n");
+			if(ReadTga.File!=NULL) {
+              fseek(ReadTga.File, IMG_TGA_HEAD_SIZE, SEEK_SET);
+              imageline = 0;
+			}
+		  }
+          else {
+			if(ReadTga.File==NULL) {
+		      fclose(RGfile);
+		    }
+		    else {
+		      fclose(ReadTga.File); 
+		    }	 
+            exit(0);
+		  }
         }
         t = clock() - t;
         time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds 
          
-      }
-    printf("Return: 0 to exit\n");  
-    return NULL; 
+      } 
+      return NULL; 
 } 
 
-int main()
-{
-	printf("Build: %s %s, GCC %s\n", __TIME__, __DATE__, __VERSION__);
-    AudioDevice = InitAudioDevice();
+int main(int argc, char *argv[]) {
+	if(argc == 1){
+      Usage(argv[0]);
+      return 0;
+    }
+	int opt = 0; 
+	while ((opt = getopt(argc, argv, "hi:d:lc")) != -1){
+      switch (opt) {
+		case 'h': //Help
+		  Usage(argv[0]);
+		  return 0;
+		  break;
+		case 'i': //Input TGA image
+          aptoptions.filename = optarg;
+          break;
+		case 'd': //Device
+		  aptoptions.device = optarg;
+		  break;  
+        case 'l': //Infinite loop
+		  aptoptions.loop = 1;
+		  break;  
+        case 'c': //User console
+		  aptoptions.console = 1;
+          break;  
+        case '?': //Unknown option
+          //printf("  Error: %c\n", optopt);
+          return 1;
+        default:
+          Usage(argv[0]);
+          return 0;  
+	   } 
+	}	  
+		  
+	if(strncmp(aptoptions.filename,_APT_FILE_NO_SET,4) == 0) {
+      printf("%s: required argument and option -- '-i <filename>'\n",argv[0]);
+      exit(2);
+    }
+    AudioDevice = InitAudioDevice(aptoptions.device);
     if(AudioDevice < 0) {
       exit(1);
     }	
-	ReadTga = OpenTgaImage("169049.tga");
+	ReadTga = OpenTgaImage(aptoptions.filename);
     if(ReadTga.File == NULL) {    
       exit(1);
     }
-    FILE *RGfile=NULL;   
-    InImage = ReadTga.File;
-    RGfile = ReadTga.File;
-    //OutImage = fopen("fileAPT_out.tga","wb");
-    
-    //write header
-    /*
-   fwrite_int(ReadTga.IDLength,1,OutImage);
-   fwrite_int(ReadTga.ColorMapType,1,OutImage);
-   fwrite_int(ReadTga.ImageType,1,OutImage);
-   fwrite_int(ReadTga.CMapStart,2,OutImage);
-   fwrite_int(ReadTga.CMapLength,2,OutImage);
-   fwrite_int(ReadTga.CMapDepth,1,OutImage);
-   fwrite_int(ReadTga.XOffset,2,OutImage);
-   fwrite_int(ReadTga.YOffset,2,OutImage);
-   fwrite_int(APT_LINE_SIZE,2,OutImage);
-   fwrite_int(ReadTga.Height,2,OutImage);
-   fwrite_int(ReadTga.PixelDepth,1,OutImage);
-   fwrite_int(ReadTga.ImageDescriptor,1,OutImage);*/
-   
-   ImageMaxRes = ReadTga.Height;
-   /*AptLine AptTrans;
-   AptLineAr ConvLine;
-   uint8_t frame=1;
-   uint32_t currentline = 1;
-   uint8_t APTdata = 0;
-   unsigned int i,j;*/
-   /*
-   for(j=0;j<ReadTga.Height;j++) {
-	 ConvLine = AptTransImageLine(frame, currentline, ReadTga, TelemetryA, TelemetryB);  
-     //AptTrans = CreateAptLine(frame, currentline, TelemetryA, TelemetryB, InImage);
-     frame++;
-     currentline++;
-     if(frame > APT_FRAME_SIZE) {
-       frame = 1;
-     }    
-     if(currentline > APT_MARKER_SIZE) {
-       currentline = 1;
-     }            
-     for(i=0;i<APT_LINE_SIZE;i++) {
-       APTdata = ConvLine.Value[i];
-       WriteTGAPixel(APTdata, APTdata, APTdata, OutImage);
-     }
-   }*/
-   
-    //fclose(OutImage);
-    //OutImage = fopen("fileAPT_out.tga","rb");
-    //fseek(OutImage, IMG_TGA_HEAD_SIZE, SEEK_SET);  	
-    
     pthread_t sound_buf; 
-    printf("Create thread\n");
-    pthread_create(&sound_buf, NULL, SoundThread, NULL);
-    printf("Connected thread\n");
-    pthread_detach(sound_buf); 
-    //printf("All\n");
-  
-    unsigned int enterf = 0;
-    while(1) {
-      //printf("Time took %f seconds to execute \n", time_taken); 
-      //printf("Enter frequency 1: ");
-      //scanf("%d", &enterf);
-      //freq1 = enterf;
-      //deltaph1 = WF_TPI*freq1/WF_SAMPLE_RATE;  // delta phase
-      printf("APT> Enter 0 to exit: ");
-      scanf("%d", &enterf);
-      if(enterf==0) {
-         printf("\nEnding \n"); 
-		 ReadTga.File = RGfile;
-         fclose(ReadTga.File);
-         exit(0);
-      } 
-      if(enterf==1) {
-        printf("Loop time: %f sec\n",time_taken);
-      }	
-	  if(enterf==2) {
-        if(ReadTga.File==NULL) {
-		  ReadTga.File = RGfile;
-		  //RGfile = ReadTga.File;
-		}	
-		else {
-		  RGfile = ReadTga.File;	
-	      ReadTga.File = NULL; 
+    if(pthread_create(&sound_buf, NULL, SoundThread, NULL)!=0){
+	  perror("Error creating thread\n");
+	  exit(1);
+	}
+    if(pthread_detach(sound_buf)!=0){
+      perror("Error detaching thread\n");
+      exit(1); 
+	}
+	
+    RGfile = ReadTga.File;    	    
+	
+	if(aptoptions.console) {
+	  char *consoleinput;
+      printf("Type help to show commands\n");	
+      while(1) {
+		consoleinput = readline("APT> ");
+        add_history(consoleinput);
+		if(!strncmp(consoleinput,"exit",4)){
+		  if(ReadTga.File==NULL) {
+			fclose(RGfile);
+		  }
+		  else {
+			fclose(ReadTga.File); 
+		  }	 
+          exit(0);
 		}
-		
-      }
-	  
-    }
-  
+		if(!strncmp(consoleinput,"help",4)){
+		  printf("help  - print help\n");
+		  printf("empty - encode empty data\n");
+		  printf("image - encode image data\n");
+		  printf("info  - show information\n");
+          printf("exit  - exit from APT\n") ;	
+		}
+		if(!strncmp(consoleinput,"empty",5)) {
+		  if(ReadTga.File!=NULL) {
+			RGfile = ReadTga.File;
+		    ReadTga.File = NULL;
+		  }
+		}
+		if(!strncmp(consoleinput,"image",5)) {
+		  if(RGfile!=NULL) {
+		    ReadTga.File = RGfile;
+			RGfile = NULL;
+		  }
+		}
+		if(!strncmp(consoleinput,"info",4)) {
+		  printf("Sound thread loop time: %lf sec\n",time_taken);
+		  printf("Input image %s\n",aptoptions.filename);
+		  printf("Output audio device %s\n",aptoptions.device);
+		}	
+	  }
+	}
+	else {
+	  while(1) {
+		sleep(1);	
+	  }
+	}
     return 0;
+}
+
+void Usage(char *p_name) {
+	printf("NOAA automatic picture transmission (APT) encoder\n");
+	printf("Usage: %s -i <file> [-d <device> -lc]\n",p_name);
+	printf("  -i <filename> Input TGA image (909px width, 24bit RGB)\n");
+	printf("  -d <device>   OSS audio device (default /dev/dsp)\n");
+	printf("  -l            Enable infinite image loop\n");
+	printf("  -c            Enable user console\n");
+	printf("  -h            Show this help\n");
+    printf("                Build: %s %s, GCC %s\n", __TIME__, __DATE__, __VERSION__); 
 }

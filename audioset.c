@@ -1,11 +1,13 @@
 #include "main.h"
 #include "audioset.h"
 
-int InitAudioDevice(void) {
+int InitAudioDevice(char *device) {
     //Open Sound Device
-    int fd = open("/dev/dsp", O_WRONLY);
+    int fd = open(device, O_WRONLY);
+	char msg[512];
     if(fd < 0) {
-        perror("open of /dev/dsp failed");
+		snprintf(msg,sizeof(msg),"Open of %s failed",device);
+        perror(msg);
         return fd;
     }
 

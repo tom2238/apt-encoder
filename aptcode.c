@@ -54,12 +54,13 @@ uint8_t AptMarkerB(uint8_t word, uint8_t minute) {
 
 AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image) {
   //frame, number in range 1 to 128, current line in frame
-  //currentline, number in range 1 to inf
+  //currentline, number in range 1 to 120
   //image is pointer to file, transmitted image
+  //ChanA and ChanB are telemetry data
   AptLine NewLine;
   uint8_t minute;
-  uint8_t telemetryA;
-  uint8_t telemetryB;
+  uint8_t telemetryA=0;
+  uint8_t telemetryB=0;
   uint8_t i;
   uint16_t j;
   uint8_t gray = 0;
