@@ -17,12 +17,13 @@
         perror(#field "ioctl failed");\
     else if(arg!=argument)\
         perror(#argument "was not set in ioctl");\
-    else\
-        printf(#argument "\t:= %d\n", arg);\
 }
 
 int16_t audio_buffer[WF_SAMPLE_RATE/WF_BUFFER_DIV];
 
 int InitAudioDevice(char *device);
-
+/*
+//  else\
+//      printf(#argument "\t:= %d\n", arg);\
+*/
 #endif 

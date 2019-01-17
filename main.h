@@ -27,10 +27,10 @@ typedef struct {
 }AptOptSettings;
 
 void *SoundThread(void *vargp); //Audio thread 
-int AudioDevice; //audio device
-
-//uint16_t ImageMaxRes; //Maximum image resolution
-
+int AudioDevice; //audio device descriptor
+// Print help and usage of application
 void Usage(char *p_name);
+// Close image
+void CloseImageFile(FILE *reg, FILE *alt);
 
 #endif
