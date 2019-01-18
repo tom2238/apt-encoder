@@ -21,7 +21,7 @@
 
 typedef struct {
   char *device;
-  char *filename;
+  char filename[1024];
   uint8_t loop;
   uint8_t console;
 }AptOptSettings;

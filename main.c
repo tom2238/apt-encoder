@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
       return 0;
       break;
     case 'i': //Input TGA image
-      aptoptions.filename = optarg;
+      strncpy(aptoptions.filename,optarg,sizeof(aptoptions.filename)-1);
       break;
     case 'd': //Device
       aptoptions.device = optarg;
@@ -163,6 +163,7 @@ int main(int argc, char *argv[]) {
         printf("empty - encode empty data\n");
         printf("image - encode image data\n");
         printf("info  - show information\n");
+        printf("load  - load new image\n");
         printf("exit  - exit from APT\n") ;	
       }
       if(!strncmp(consoleinput,"empty",5)) {
@@ -177,12 +178,39 @@ int main(int argc, char *argv[]) {
           RGfile = NULL;
         }
       }
+      if(!strncmp(consoleinput,"load",4)) {
+        char newimage[1024];
+        printf("New image filename: ");
+        scanf("%s",newimage);
+        TgaImageHead NewTgaFile = OpenTgaImage(newimage);
+        if(NewTgaFile.File != NULL) { 
+          strncpy(aptoptions.filename,newimage,sizeof(newimage)-1);  
+          imageline = 0;
+          CloseImageFile(ReadTga.File, RGfile);
+          if(ReadTga.File == NULL) {
+            ReadTga = NewTgaFile;
+            RGfile = NewTgaFile.File;
+            ReadTga.File = NULL;
+          }
+          else {
+            ReadTga = NewTgaFile;
+            RGfile = NULL;            
+          }    
+        }
+      }
       if(!strncmp(consoleinput,"info",4)) {
         printf("Sound thread loop time: %lf sec\n",time_taken);
         printf("Output audio device: %s, ",aptoptions.device);
         printf("Sample rate: %d Hz, Bits: %d, Channels: %d\n",WF_SAMPLE_RATE,WF_SAMPLEBITS,WF_CHANNELS);
         printf("Input image: %s , ",aptoptions.filename);
-        printf("Width: %dpx, Height: %dpx\n",ReadTga.Width, ReadTga.Height);
+        printf("Width: %dpx, Height: %dpx, ",ReadTga.Width, ReadTga.Height);
+        printf("Transmiting - ");
+        if(ReadTga.File==NULL){
+          printf("no\n");
+        }
+        else {
+          printf("yes\n");
+        }
         printf("Time to transmit: %d sec, ",ReadTga.Height/2);
         printf("Current line %d, %d%%\n",imageline,(int)(100*imageline/ReadTga.Height));
         printf("Total transmitted frames %d, ",transmitted_frame);
