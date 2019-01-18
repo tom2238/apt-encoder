@@ -4,11 +4,11 @@
 int InitAudioDevice(char *device) {
     //Open Sound Device
     int fd = open(device, O_WRONLY);
-	char msg[512];
+    char msg[512];
     if(fd < 0) {
-		snprintf(msg,sizeof(msg),"Open of %s failed",device);
-        perror(msg);
-        return fd;
+      snprintf(msg,sizeof(msg),"Open of %s failed",device);
+      perror(msg);
+      return fd;
     }
 
     //Configure Sound Device

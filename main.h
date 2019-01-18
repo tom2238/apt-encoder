@@ -20,10 +20,10 @@
 #define _APT_AUDIO_DEVICE "/dev/dsp"
 
 typedef struct {
-	char *device;
-	char *filename;
-	uint8_t loop;
-	uint8_t console;
+  char *device;
+  char *filename;
+  uint8_t loop;
+  uint8_t console;
 }AptOptSettings;
 
 void *SoundThread(void *vargp); //Audio thread 

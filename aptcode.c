@@ -75,11 +75,11 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
   } 
   // Video A and Video B
   for(j=0;j<APT_VIDEO_A;j++) {
-	if(image==NULL) {
+    if(image==NULL) {
       NewLine.VideoA[j] = 0;
-	  NewLine.VideoB[j] = 0;
-	}
-	else {
+      NewLine.VideoB[j] = 0;
+    }
+    else {
       pix = ReadTGAPixel(image);
       Rval = GetRedSubPixel(pix);
       Gval = GetGreenSubPixel(pix);
@@ -88,7 +88,7 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
       NewLine.VideoA[j] = gray;
       //gray = ((Rval / 32) << 5) + ((Gval / 32) << 2) + (Bval/ 64);
       NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
-	}
+    }
   }
   // Marker A and Marker B
   minute = currentline % APT_MARKER_SIZE;
@@ -175,12 +175,12 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
 }
 //Concat AptLine to one array
 AptLineAr ConcatAptLine(AptLine Apt) {
-  int i,j=0;
-  AptLineAr AptAr;
-  for(i=0;i<APT_SYNC_A;i++) {
+   int i,j=0;
+   AptLineAr AptAr;
+   for(i=0;i<APT_SYNC_A;i++) {
      AptAr.Value[j] = Apt.SyncA[i];
      j++;
-  }
+   }
    for(i=0;i<APT_MARKER_A;i++) {
      AptAr.Value[j] = Apt.MarkerA[i];
      j++;
