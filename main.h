@@ -24,6 +24,7 @@ typedef struct {
   char filename[1024];
   uint8_t loop;
   uint8_t console;
+  uint8_t datab;
 }AptOptSettings;
 
 void *SoundThread(void *vargp); //Audio thread 

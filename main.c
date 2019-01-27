@@ -8,7 +8,7 @@ AptTelemetry TelemetryB = {0, 105, 105, 105, 105, 160, 150, 160, 60, 100, 135, 1
 
 double time_taken;
 TgaImageHead ReadTga;
-AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,0,0};
+AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,0,0,'N'};
 FILE *RGfile=NULL; 
 uint16_t imageline = 0;
 uint16_t transmitted_images = 0;
@@ -30,7 +30,7 @@ void *SoundThread(void *vargp) {
   while(1) {
     t = clock();
 
-    ConvLine = AptTransImageLine(frame, currentline, ReadTga, TelemetryA, TelemetryB);  
+    ConvLine = AptTransImageLine(frame, currentline, ReadTga, TelemetryA, TelemetryB, aptoptions.datab); 
     frame++;
     currentline++;
     if(frame > APT_FRAME_SIZE) {
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   int opt = 0; 
-  while ((opt = getopt(argc, argv, "hi:d:lc")) != -1){
+  while ((opt = getopt(argc, argv, "hi:d:lcm:")) != -1){
     switch (opt) {
     case 'h': //Help
       Usage(argv[0]);
@@ -109,6 +109,20 @@ int main(int argc, char *argv[]) {
       break;  
     case 'c': //User console
       aptoptions.console = 1;
+      break;
+    case 'm': //Channel B data mode
+      switch (optarg[0]) {
+        case 'R': //Red
+        case 'G': //Green
+        case 'B': //Blue
+        case 'N': //Negative
+        case 'Y': //Yb
+          aptoptions.datab = optarg[0];
+          break;
+        default:
+          printf("Bad mode: %c , ",optarg[0]);
+          printf("Set to N\n");
+      }
       break;  
     case '?': //Unknown option
       //printf("  Error: %c\n", optopt);
@@ -158,27 +172,43 @@ int main(int argc, char *argv[]) {
         CloseImageFile(ReadTga.File, RGfile);
         exit(0);
       }
-      if(!strncmp(consoleinput,"help",4)){
+      else if(!strncmp(consoleinput,"help",4)){
         printf("help  - print help\n");
         printf("empty - encode empty data\n");
         printf("image - encode image data\n");
         printf("info  - show information\n");
         printf("load  - load new image\n");
+        printf("mode  - channel B data mode (R,G,B,N,Y)\n");
         printf("exit  - exit from APT\n") ;	
       }
-      if(!strncmp(consoleinput,"empty",5)) {
+      else if(!strncmp(consoleinput,"empty",5)) {
         if(ReadTga.File!=NULL) {
           RGfile = ReadTga.File;
           ReadTga.File = NULL;
         }
       }
-      if(!strncmp(consoleinput,"image",5)) {
+      else if(!strncmp(consoleinput,"image",5)) {
         if(RGfile!=NULL) {
           ReadTga.File = RGfile;
           RGfile = NULL;
         }
       }
-      if(!strncmp(consoleinput,"load",4)) {
+      else if(!strncmp(consoleinput,"mode R",6)) {
+        aptoptions.datab = 'R';
+      }  
+      else if(!strncmp(consoleinput,"mode G",6)) {
+        aptoptions.datab = 'G';
+      }
+      else if(!strncmp(consoleinput,"mode B",6)) {
+        aptoptions.datab = 'B';
+      }
+      else if(!strncmp(consoleinput,"mode N",6)) {
+        aptoptions.datab = 'N';
+      }
+      else if(!strncmp(consoleinput,"mode Y",6)) {
+        aptoptions.datab = 'Y';
+      }
+      else if(!strncmp(consoleinput,"load",4)) {
         char newimage[1024];
         printf("New image filename: ");
         scanf("%s",newimage);
@@ -198,7 +228,7 @@ int main(int argc, char *argv[]) {
           }    
         }
       }
-      if(!strncmp(consoleinput,"info",4)) {
+      else if(!strncmp(consoleinput,"info",4)) {
         printf("Sound thread loop time: %lf sec\n",time_taken);
         printf("Output audio device: %s, ",aptoptions.device);
         printf("Sample rate: %d Hz, Bits: %d, Channels: %d\n",WF_SAMPLE_RATE,WF_SAMPLEBITS,WF_CHANNELS);
@@ -212,11 +242,15 @@ int main(int argc, char *argv[]) {
           printf("yes\n");
         }
         printf("Time to transmit: %d sec, ",ReadTga.Height/2);
-        printf("Current line %d, %d%%\n",imageline,(int)(100*imageline/ReadTga.Height));
+        printf("Current line %d, %d%%, ",imageline,(int)(100*imageline/ReadTga.Height));
+        printf("Channel B data mode %c\n",aptoptions.datab);
         printf("Total transmitted frames %d, ",transmitted_frame);
         printf("Total transmitted minutes %d, ",transmitted_minutes);
         printf("Image loops: %d\n",transmitted_images);
       }	
+      else {
+        printf("Bad command\n");
+      }
     }
   }
   else {
@@ -229,9 +263,10 @@ int main(int argc, char *argv[]) {
 
 void Usage(char *p_name) {
   printf("NOAA automatic picture transmission (APT) encoder\n");
-  printf("Usage: %s -i <file> [-d <device> -lc]\n",p_name);
+  printf("Usage: %s -i <file> [-d <device> -m <mode> -lc]\n",p_name);
   printf("  -i <filename> Input TGA image (909px width, 24bit RGB)\n");
   printf("  -d <device>   OSS audio device (default /dev/dsp)\n");
+  printf("  -m <mode>     Channel B data mode (R,G,B,N,Y)\n");
   printf("  -l            Enable infinite image loop\n");
   printf("  -c            Enable user console\n");
   printf("  -h            Show this help\n");

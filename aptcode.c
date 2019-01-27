@@ -52,7 +52,7 @@ uint8_t AptMarkerB(uint8_t word, uint8_t minute) {
   }
 }
 
-AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image) {
+AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image, uint8_t DataB) {
   //frame, number in range 1 to 128, current line in frame
   //currentline, number in range 1 to 120
   //image is pointer to file, transmitted image
@@ -63,7 +63,6 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
   uint8_t telemetryB=0;
   uint8_t i;
   uint16_t j;
-  uint8_t gray = 0;
   uint8_t Rval = 0;
   uint8_t Gval = 0;
   uint8_t Bval = 0;
@@ -84,10 +83,24 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
       Rval = GetRedSubPixel(pix);
       Gval = GetGreenSubPixel(pix);
       Bval = GetBlueSubPixel(pix);
-      gray = Rval*0.302 + Gval*0.59 + Bval*0.11;
-      NewLine.VideoA[j] = gray;
-      //gray = ((Rval / 32) << 5) + ((Gval / 32) << 2) + (Bval/ 64);
-      NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
+      NewLine.VideoA[j] = Rval*0.302 + Gval*0.59 + Bval*0.11;
+      switch(DataB) {
+        case 'R': //Red
+          NewLine.VideoB[j] = Rval;
+          break;
+        case 'G': //Green
+          NewLine.VideoB[j] = Gval;
+          break;
+        case 'B': //Blue
+          NewLine.VideoB[j] = Bval;
+          break;
+        case 'Y': //Yb
+          NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
+          break;
+        case 'N':  
+        default : //Negative
+          NewLine.VideoB[j] = 255-NewLine.VideoA[j];
+      }      
     }
   }
   // Marker A and Marker B
@@ -212,11 +225,11 @@ AptLineAr ConcatAptLine(AptLine Apt) {
    return AptAr;
 }
 
-AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead tgahead, AptTelemetry telemA, AptTelemetry telemB){
+AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead tgahead, AptTelemetry telemA, AptTelemetry telemB, uint8_t DataB){
   AptLineAr result;
   AptLine AptTrans;
   
-  AptTrans = CreateAptLine(frame, currentline, telemA, telemB, tgahead.File);			
+  AptTrans = CreateAptLine(frame, currentline, telemA, telemB, tgahead.File, DataB);			
   result = ConcatAptLine(AptTrans);
 
   return result;	
