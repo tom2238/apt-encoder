@@ -2,14 +2,16 @@
 #include "aptcode.h"
 #include "image.h"
 #include "audioset.h"
+#include "wavwrite.h"
 
 AptTelemetry TelemetryA = {0, 105, 105, 105, 105, 158, 0, 60, 60, 100, 135, 164, 192, 220, 245, 255};
 AptTelemetry TelemetryB = {0, 105, 105, 105, 105, 160, 150, 160, 60, 100, 135, 165, 192, 220, 245, 255};
 
 double time_taken;
 TgaImageHead ReadTga;
-AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,0,0,'N'};
+AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,0,0,'N',0,0};
 FILE *RGfile=NULL; 
+FILE *WAVfile=NULL;
 uint16_t imageline = 0;
 uint16_t transmitted_images = 0;
 uint32_t transmitted_frame = 0;
@@ -49,11 +51,21 @@ void *SoundThread(void *vargp) {
       aptdata = (ConvLine.Value[(unsigned int)(i/APT_WORD_MUL)]);
       carrier = (carrier * aptdata)+carrier*32;
       carrier_phase += carrier_delta;	
-      audio_buffer[i]=carrier;
+      if(!aptoptions.isfile) {
+        audio_buffer[i]=carrier;
+      }else{
+        audio_buffer[i]=carrier*3;
+      }
     }
-        
-    if(write(AudioDevice, audio_buffer, sizeof(audio_buffer)) != WF_SAMPLE_RATE/WF_BUFFER_DIV*WF_SAMPLEBITS/8) {
-      perror("Wrote wrong number of bytes");
+    if(!aptoptions.isfile) {     
+      if(write(AudioDevice, audio_buffer, sizeof(audio_buffer)) != WF_SAMPLE_RATE/WF_BUFFER_DIV*WF_SAMPLEBITS/8) {
+        perror("Wrote wrong number of bytes");
+      }
+    }
+    else {
+      for(i=0; i<WF_SAMPLE_RATE/WF_BUFFER_DIV; i++) {
+        fwrite(&audio_buffer[i],2,1,WAVfile);
+      }
     }
     if(ReadTga.File!=NULL) {
       imageline++;
@@ -92,7 +104,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   int opt = 0; 
-  while ((opt = getopt(argc, argv, "hi:d:lcm:")) != -1){
+  while ((opt = getopt(argc, argv, "hi:d:lcm:r")) != -1){
     switch (opt) {
     case 'h': //Help
       Usage(argv[0]);
@@ -103,6 +115,7 @@ int main(int argc, char *argv[]) {
       break;
     case 'd': //Device
       aptoptions.device = optarg;
+      aptoptions.chdev = 1;
       break;  
     case 'l': //Infinite loop
       aptoptions.loop = 1;
@@ -123,7 +136,10 @@ int main(int argc, char *argv[]) {
           printf("Bad mode: %c , ",optarg[0]);
           printf("Set to N\n");
       }
-      break;  
+      break; 
+    case 'r':
+      aptoptions.isfile=1; 
+      break;
     case '?': //Unknown option
       //printf("  Error: %c\n", optopt);
       return 1;
@@ -137,13 +153,30 @@ int main(int argc, char *argv[]) {
     printf("%s: required argument and option -- '-i <filename>'\n",argv[0]);
     exit(2);
   }
-  AudioDevice = InitAudioDevice(aptoptions.device);
-  if(AudioDevice < 0) {
-    exit(1);
-  }	
   ReadTga = OpenTgaImage(aptoptions.filename);
   if(ReadTga.File == NULL) {    
     exit(1);
+  }
+  if(aptoptions.isfile) {
+    aptoptions.console=0;
+    aptoptions.loop=0;
+    if(aptoptions.chdev) {
+      WAVfile=wav_open(aptoptions.device);
+      if(WAVfile==NULL){
+        exit(1);
+      }
+      wav_head(ReadTga.Height/2,WF_SAMPLE_RATE,WF_SAMPLEBITS,WAVfile);
+    }
+    else {
+      printf("Cannot use %s as regular file\n",_APT_AUDIO_DEVICE);
+      exit(1);
+    }
+  }
+  else{
+    AudioDevice = InitAudioDevice(aptoptions.device);
+    if(AudioDevice < 0) {
+      exit(1);
+    }
   }
   pthread_t sound_buf; 
   if(pthread_create(&sound_buf, NULL, SoundThread, NULL)!=0){
@@ -254,21 +287,24 @@ int main(int argc, char *argv[]) {
     }
   }
   else {
-    while(1) {
-      sleep(1);	
-    }
+    //if(!aptoptions.isfile) {
+      while(1) {
+        sleep(1);	
+      }
+    //}
   }
   return 0;
 }
 
 void Usage(char *p_name) {
   printf("NOAA automatic picture transmission (APT) encoder\n");
-  printf("Usage: %s -i <file> [-d <device> -m <mode> -lc]\n",p_name);
+  printf("Usage: %s -i <file> [-d <device> -m <mode> -lcr]\n",p_name);
   printf("  -i <filename> Input TGA image (909px width, 24bit RGB)\n");
-  printf("  -d <device>   OSS audio device (default /dev/dsp)\n");
+  printf("  -d <device>   OSS audio device (default /dev/dsp) or file\n");
   printf("  -m <mode>     Channel B data mode (R,G,B,N,Y)\n");
   printf("  -l            Enable infinite image loop\n");
   printf("  -c            Enable user console\n");
+  printf("  -r            Device is regular file (write WAV audio file)\n");
   printf("  -h            Show this help\n");
   printf("                Build: %s %s, GCC %s\n", __TIME__, __DATE__, __VERSION__); 
 }

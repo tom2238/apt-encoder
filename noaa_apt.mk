@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=
-Date                   :=27.1.2019
+Date                   :=30.1.2019
 CodeLitePath           :="/home/guest/.codelite"
 LinkerName             :=gcc
 SharedObjectLinkerName :=gcc -shared -fPIC
@@ -60,7 +60,7 @@ AS       := as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/aptcode.c$(ObjectSuffix) $(IntermediateDirectory)/audioset.c$(ObjectSuffix) $(IntermediateDirectory)/image.c$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/aptcode.c$(ObjectSuffix) $(IntermediateDirectory)/audioset.c$(ObjectSuffix) $(IntermediateDirectory)/image.c$(ObjectSuffix) $(IntermediateDirectory)/wavwrite.c$(ObjectSuffix) 
 
 
 
@@ -122,6 +122,14 @@ $(IntermediateDirectory)/image.c$(DependSuffix): image.c
 
 $(IntermediateDirectory)/image.c$(PreprocessSuffix): image.c
 	@$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/image.c$(PreprocessSuffix) "image.c"
+
+$(IntermediateDirectory)/wavwrite.c$(ObjectSuffix): wavwrite.c $(IntermediateDirectory)/wavwrite.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/guest/Dokumenty/C-code/noaa_apt/wavwrite.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/wavwrite.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/wavwrite.c$(DependSuffix): wavwrite.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/wavwrite.c$(ObjectSuffix) -MF$(IntermediateDirectory)/wavwrite.c$(DependSuffix) -MM "wavwrite.c"
+
+$(IntermediateDirectory)/wavwrite.c$(PreprocessSuffix): wavwrite.c
+	@$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/wavwrite.c$(PreprocessSuffix) "wavwrite.c"
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

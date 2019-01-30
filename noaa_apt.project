@@ -29,6 +29,8 @@
     <File Name="main.h"/>
     <File Name="audioset.c"/>
     <File Name="image.c"/>
+    <File Name="wavwrite.c"/>
+    <File Name="wavwrite.h"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

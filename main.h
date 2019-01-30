@@ -25,7 +25,14 @@ typedef struct {
   uint8_t loop;
   uint8_t console;
   uint8_t datab;
+  uint8_t isfile;
+  uint8_t chdev;
 }AptOptSettings;
+
+typedef struct {
+  int device;
+  FILE *file;
+}AptAudioSettings;
 
 void *SoundThread(void *vargp); //Audio thread 
 int AudioDevice; //audio device descriptor
