@@ -27,7 +27,7 @@ Usage: Debug/noaa_apt -i <file> [-d <device> -m <mode> -lcr]
 <table>
 <tr><td>Source image</td><td><img src="./doc/SourceTestImage.jpg" width="500"></td></tr>
 <tr><td>Decoded image</td><td><img src="./doc/DecodedTestImage.jpg" width="1144"></td></tr>
-<tr><td>Source audio</td><td><audio src="./doc/SourceTestAudio.ogg" controls preload="none"></audio></td></tr>
+<tr><td>Source audio</td><td><audio src="./doc/SourceTestAudio.ogg" controls preload="none"></audio> <a href="./doc/SourceTestAudio.ogg">Sample</a></td></tr>
 </table>
 
 ### APT
