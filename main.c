@@ -9,7 +9,7 @@ AptTelemetry TelemetryB = {0, 105, 105, 105, 105, 160, 150, 160, 60, 100, 135, 1
 
 double time_taken;
 TgaImageHead ReadTga;
-AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,0,0,'N',0,0};
+AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,0,0,'N',0,0,0,0};
 FILE *RGfile=NULL; 
 FILE *WAVfile=NULL;
 uint16_t imageline = 0;
@@ -58,11 +58,18 @@ void *SoundThread(void *vargp) {
       }
     }
     if(!aptoptions.isfile) {     
-      if(write(AudioDevice, audio_buffer, sizeof(audio_buffer)) != WF_SAMPLE_RATE/WF_BUFFER_DIV*WF_SAMPLEBITS/8) {
-        perror("Wrote wrong number of bytes");
+      if(aptoptions.usestdout) { // Use STDOUT
+        for(i=0; i<WF_SAMPLE_RATE/WF_BUFFER_DIV; i++) {
+          fwrite_int(audio_buffer[i],2,stdout); // aplay -f S16_LE -r 24000
+        }
+      } 
+      else { // Use OSS device
+        if(write(AudioDevice, audio_buffer, sizeof(audio_buffer)) != WF_SAMPLE_RATE/WF_BUFFER_DIV*WF_SAMPLEBITS/8) {
+          perror("Wrote wrong number of bytes");
+        }
       }
     }
-    else {
+    else { // Writing WAV file
       for(i=0; i<WF_SAMPLE_RATE/WF_BUFFER_DIV; i++) {
         fwrite(&audio_buffer[i],2,1,WAVfile);
       }
@@ -104,7 +111,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   int opt = 0; 
-  while ((opt = getopt(argc, argv, "hi:d:lcm:r")) != -1){
+  while ((opt = getopt(argc, argv, "hi:d:lcm:rIO")) != -1){
     switch (opt) {
     case 'h': //Help
       Usage(argv[0]);
@@ -137,8 +144,14 @@ int main(int argc, char *argv[]) {
           printf("Set to N\n");
       }
       break; 
-    case 'r':
+    case 'r':  // Regular file
       aptoptions.isfile=1; 
+      break;
+    case 'I': // Use STDIN for image data
+      aptoptions.usestdin = 1;
+      break;  
+    case 'O': // User STDOUT for audio
+      aptoptions.usestdout = 1;
       break;
     case '?': //Unknown option
       //printf("  Error: %c\n", optopt);
@@ -156,6 +169,12 @@ int main(int argc, char *argv[]) {
   ReadTga = OpenTgaImage(aptoptions.filename);
   if(ReadTga.File == NULL) {    
     exit(1);
+  }
+  if(aptoptions.usestdout) {
+    aptoptions.isfile=0;
+    aptoptions.console=0;
+    aptoptions.loop=0;
+    aptoptions.device=_APT_AUDIO_STDOUT;
   }
   if(aptoptions.isfile) {
     aptoptions.console=0;
@@ -177,6 +196,7 @@ int main(int argc, char *argv[]) {
     if(AudioDevice < 0) {
       exit(1);
     }
+    
   }
   pthread_t sound_buf; 
   if(pthread_create(&sound_buf, NULL, SoundThread, NULL)!=0){
@@ -298,10 +318,13 @@ int main(int argc, char *argv[]) {
 
 void Usage(char *p_name) {
   printf("NOAA automatic picture transmission (APT) encoder\n");
-  printf("Usage: %s -i <file> [-d <device> -m <mode> -lcr]\n",p_name);
+  printf("Usage: %s (-i <file> | -I) [(-d <device> | -O) -m <mode> -lcr]\n",p_name);
   printf("  -i <filename> Input TGA image (909px width, 24bit RGB)\n");
+  //printf("  -s <filename> Second input TGA image (B channel, mode ignored)\n");
   printf("  -d <device>   OSS audio device (default /dev/dsp) or file\n");
   printf("  -m <mode>     Channel B data mode (R,G,B,N,Y)\n");
+  printf("  -I            Read image data from stdin\n");
+  printf("  -O            Write audio data to stdout\n");
   printf("  -l            Enable infinite image loop\n");
   printf("  -c            Enable user console\n");
   printf("  -r            Device is regular file (write WAV audio file)\n");

@@ -18,6 +18,8 @@
 
 #define _APT_FILE_NO_SET "σame"
 #define _APT_AUDIO_DEVICE "/dev/dsp"
+#define _APT_AUDIO_STDOUT "io://stdout/"
+#define _APT_AUDIO_STDIN  "io://stdin/"
 
 typedef struct {
   char *device;
@@ -27,6 +29,8 @@ typedef struct {
   uint8_t datab;
   uint8_t isfile;
   uint8_t chdev;
+  uint8_t usestdin;
+  uint8_t usestdout;
 }AptOptSettings;
 
 typedef struct {
