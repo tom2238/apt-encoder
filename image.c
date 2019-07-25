@@ -113,7 +113,7 @@ TgaImageHead OpenTgaImage(char *filename) {
   TgaImage.PixelDepth = fread_int(1,filein);  
   TgaImage.ImageDescriptor = fread_int(1,filein); 
   if (TgaImage.Width != APT_VIDEO_A)  {
-    printf("Image width is %d px\n",TgaImage.Width);
+    printf("%s : Image width is %d px\n",filename,TgaImage.Width);
     printf("Only %d px width images are supported\n",APT_VIDEO_A);
     fclose(filein);
     return TgaImage;

@@ -22,15 +22,16 @@
 #define _APT_AUDIO_STDIN  "io://stdin/"
 
 typedef struct {
-  char *device;
-  char filename[1024];
-  uint8_t loop;
-  uint8_t console;
-  uint8_t datab;
-  uint8_t isfile;
-  uint8_t chdev;
-  uint8_t usestdin;
-  uint8_t usestdout;
+  char *device;         // Audio device
+  char filename[1024];  // First image
+  char secondfile[1024];// Second image
+  uint8_t loop;         // Images loop
+  uint8_t console;      // User console
+  uint8_t datab;        // First image data channel B mode
+  uint8_t isfile;       // Write to WAV file
+  uint8_t chdev;        // Custom audio device
+  uint8_t usestdin;     // Read image data from STDIN
+  uint8_t usestdout;    // Write audio to STDOUT
 }AptOptSettings;
 
 typedef struct {
@@ -44,5 +45,7 @@ int AudioDevice; //audio device descriptor
 void Usage(char *p_name);
 // Close image
 void CloseImageFile(FILE *reg, FILE *alt);
+// Clear Readline console
+void ClearConsole();
 
 #endif

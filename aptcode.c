@@ -52,7 +52,7 @@ uint8_t AptMarkerB(uint8_t word, uint8_t minute) {
   }
 }
 
-AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image, uint8_t DataB) {
+AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image, FILE *secimage, uint8_t DataB) {
   //frame, number in range 1 to 128, current line in frame
   //currentline, number in range 1 to 120
   //image is pointer to file, transmitted image
@@ -74,33 +74,57 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
   } 
   // Video A and Video B
   for(j=0;j<APT_VIDEO_A;j++) {
-    if(image==NULL) {
-      NewLine.VideoA[j] = 0;
-      NewLine.VideoB[j] = 0;
-    }
-    else {
-      pix = ReadTGAPixel(image);
-      Rval = GetRedSubPixel(pix);
-      Gval = GetGreenSubPixel(pix);
-      Bval = GetBlueSubPixel(pix);
-      NewLine.VideoA[j] = Rval*0.302 + Gval*0.59 + Bval*0.11;
-      switch(DataB) {
-        case 'R': //Red
-          NewLine.VideoB[j] = Rval;
-          break;
-        case 'G': //Green
-          NewLine.VideoB[j] = Gval;
-          break;
-        case 'B': //Blue
-          NewLine.VideoB[j] = Bval;
-          break;
-        case 'Y': //Yb
-          NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
-          break;
-        case 'N':  
-        default : //Negative
-          NewLine.VideoB[j] = 255-NewLine.VideoA[j];
-      }      
+    if(AptImageSet == 1) {
+      if(image==NULL) {
+        NewLine.VideoA[j] = 0;
+        NewLine.VideoB[j] = 0;
+      }
+      else {
+        pix = ReadTGAPixel(image);
+        Rval = GetRedSubPixel(pix);
+        Gval = GetGreenSubPixel(pix);
+        Bval = GetBlueSubPixel(pix);
+        NewLine.VideoA[j] = Rval*0.302 + Gval*0.59 + Bval*0.11;
+        switch(DataB) {
+          case 'R': //Red
+            NewLine.VideoB[j] = Rval;
+            break;
+          case 'G': //Green
+            NewLine.VideoB[j] = Gval;
+            break;
+          case 'B': //Blue
+            NewLine.VideoB[j] = Bval;
+            break;
+          case 'Y': //Yb
+            NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
+            break;
+          case 'N':  
+          default : //Negative
+            NewLine.VideoB[j] = 255-NewLine.VideoA[j];
+        }      
+      }
+    } 
+    else if (AptImageSet == 2) {
+      if(image==NULL) {
+        NewLine.VideoA[j] = 0;
+      }
+      else {
+        pix = ReadTGAPixel(image);
+        Rval = GetRedSubPixel(pix);
+        Gval = GetGreenSubPixel(pix);
+        Bval = GetBlueSubPixel(pix);
+        NewLine.VideoA[j] = Rval*0.302 + Gval*0.59 + Bval*0.11;
+      }
+      if(secimage==NULL) {
+        NewLine.VideoB[j] = 0;
+      }
+      else { 
+        pix = ReadTGAPixel(secimage);
+        Rval = GetRedSubPixel(pix);
+        Gval = GetGreenSubPixel(pix);
+        Bval = GetBlueSubPixel(pix);
+        NewLine.VideoB[j] = Rval*0.302 + Gval*0.59 + Bval*0.11;
+      }
     }
   }
   // Marker A and Marker B
@@ -225,11 +249,11 @@ AptLineAr ConcatAptLine(AptLine Apt) {
    return AptAr;
 }
 
-AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead tgahead, AptTelemetry telemA, AptTelemetry telemB, uint8_t DataB){
+AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead firstHead, TgaImageHead secHead, AptTelemetry telemA, AptTelemetry telemB, uint8_t DataB){
   AptLineAr result;
   AptLine AptTrans;
   
-  AptTrans = CreateAptLine(frame, currentline, telemA, telemB, tgahead.File, DataB);			
+  AptTrans = CreateAptLine(frame, currentline, telemA, telemB, firstHead.File, secHead.File, DataB);			
   result = ConcatAptLine(AptTrans);
 
   return result;	

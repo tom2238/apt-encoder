@@ -9,10 +9,12 @@ AptTelemetry TelemetryB = {0, 105, 105, 105, 105, 160, 150, 160, 60, 100, 135, 1
 
 double time_taken;
 TgaImageHead ReadTga;
-AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,0,0,'N',0,0,0,0};
+TgaImageHead SecondTga;
+AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,_APT_FILE_NO_SET,0,0,'N',0,0,0,0}; // Common APT settings
 FILE *RGfile=NULL; 
 FILE *WAVfile=NULL;
 uint16_t imageline = 0;
+uint16_t imageline_second = 0;
 uint16_t transmitted_images = 0;
 uint32_t transmitted_frame = 0;
 uint32_t transmitted_minutes = 0;
@@ -32,7 +34,7 @@ void *SoundThread(void *vargp) {
   while(1) {
     t = clock();
 
-    ConvLine = AptTransImageLine(frame, currentline, ReadTga, TelemetryA, TelemetryB, aptoptions.datab); 
+    ConvLine = AptTransImageLine(frame, currentline, ReadTga, SecondTga, TelemetryA, TelemetryB, aptoptions.datab); 
     frame++;
     currentline++;
     if(frame > APT_FRAME_SIZE) {
@@ -77,6 +79,9 @@ void *SoundThread(void *vargp) {
     if(ReadTga.File!=NULL) {
       imageline++;
     }
+    if((SecondTga.File!=NULL)&&(AptImageSet==2))  {
+      imageline_second++;
+    }
     if(imageline >= ReadTga.Height) {
       if(aptoptions.loop) {
         //printf("End of image. Another loop.\n");
@@ -89,15 +94,28 @@ void *SoundThread(void *vargp) {
       else {
         CloseImageFile(ReadTga.File, RGfile);
         if(aptoptions.console) {
-          rl_free_line_state();
-          rl_cleanup_after_signal();
-          RL_UNSETSTATE(RL_STATE_ISEARCH|RL_STATE_NSEARCH|RL_STATE_VIMOTION|RL_STATE_NUMERICARG|RL_STATE_MULTIKEY);
-          rl_line_buffer[rl_point = rl_end = rl_mark = 0] = 0;
-          printf("\n");
+          ClearConsole();
         }
         exit(0);
       }
     }
+    if((imageline_second >= SecondTga.Height)&&(AptImageSet==2)) {
+      if(aptoptions.loop) {
+        transmitted_images++;
+        if(SecondTga.File!=NULL) {
+          fseek(SecondTga.File, IMG_TGA_HEAD_SIZE, SEEK_SET);
+          imageline_second = 0;
+        }
+      }
+      else {
+        fclose(SecondTga.File);
+        if(aptoptions.console) {
+          ClearConsole();
+        }
+        exit(0);
+      }
+    }
+    
     t = clock() - t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds 
          
@@ -111,7 +129,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   int opt = 0; 
-  while ((opt = getopt(argc, argv, "hi:d:lcm:rIO")) != -1){
+  while ((opt = getopt(argc, argv, "hi:s:d:lcm:rIO")) != -1){
     switch (opt) {
     case 'h': //Help
       Usage(argv[0]);
@@ -120,6 +138,9 @@ int main(int argc, char *argv[]) {
     case 'i': //Input TGA image
       strncpy(aptoptions.filename,optarg,sizeof(aptoptions.filename)-1);
       break;
+    case 's': //Second input TGA image
+      strncpy(aptoptions.secondfile,optarg,sizeof(aptoptions.secondfile)-1);
+      break;  
     case 'd': //Device
       aptoptions.device = optarg;
       aptoptions.chdev = 1;
@@ -166,17 +187,26 @@ int main(int argc, char *argv[]) {
     printf("%s: required argument and option -- '-i <filename>'\n",argv[0]);
     exit(2);
   }
+  // Open input images
   ReadTga = OpenTgaImage(aptoptions.filename);
-  if(ReadTga.File == NULL) {    
+  AptImageSet = 1;
+  if(ReadTga.File == NULL) {  // On error 
     exit(1);
   }
-  if(aptoptions.usestdout) {
+  if(strncmp(aptoptions.secondfile,_APT_FILE_NO_SET,4)) {
+   SecondTga = OpenTgaImage(aptoptions.secondfile);
+   AptImageSet = 2;
+    if(SecondTga.File == NULL) {   // On error 
+      exit(1);
+    }
+  }
+  if(aptoptions.usestdout) { // Use STD OUT
     aptoptions.isfile=0;
     aptoptions.console=0;
     aptoptions.loop=0;
     aptoptions.device=_APT_AUDIO_STDOUT;
   }
-  if(aptoptions.isfile) {
+  if(aptoptions.isfile) { // Write to WAV file
     aptoptions.console=0;
     aptoptions.loop=0;
     if(aptoptions.chdev) {
@@ -196,7 +226,6 @@ int main(int argc, char *argv[]) {
     if(AudioDevice < 0) {
       exit(1);
     }
-    
   }
   pthread_t sound_buf; 
   if(pthread_create(&sound_buf, NULL, SoundThread, NULL)!=0){
@@ -222,26 +251,33 @@ int main(int argc, char *argv[]) {
       }
       add_history(consoleinput);
       if(!strncmp(consoleinput,"exit",4)){
-        CloseImageFile(ReadTga.File, RGfile);
+        if(strncmp(aptoptions.secondfile,_APT_FILE_NO_SET,4) == 0) {
+          CloseImageFile(ReadTga.File, RGfile);
+        }
+        else {
+          fclose(ReadTga.File);
+          fclose(SecondTga.File);
+        }
         exit(0);
       }
       else if(!strncmp(consoleinput,"help",4)){
         printf("help  - print help\n");
-        printf("empty - encode empty data\n");
-        printf("image - encode image data\n");
+        printf("empty - encode empty data (only in single)\n");
+        printf("image - encode image data (only in single)\n");
         printf("info  - show information\n");
-        printf("load  - load new image\n");
-        printf("mode  - channel B data mode (R,G,B,N,Y)\n");
+        printf("load1 - load new first image\n");
+        printf("load2 - load new second image (only in multi)\n");
+        printf("mode  - channel B data mode (R,G,B,N,Y) (only in single)\n");
         printf("exit  - exit from APT\n") ;	
       }
       else if(!strncmp(consoleinput,"empty",5)) {
-        if(ReadTga.File!=NULL) {
+        if((ReadTga.File!=NULL)&&(strncmp(aptoptions.secondfile,_APT_FILE_NO_SET,4) == 0)) {
           RGfile = ReadTga.File;
           ReadTga.File = NULL;
         }
       }
       else if(!strncmp(consoleinput,"image",5)) {
-        if(RGfile!=NULL) {
+        if((RGfile!=NULL)&&(strncmp(aptoptions.secondfile,_APT_FILE_NO_SET,4) == 0)) {
           ReadTga.File = RGfile;
           RGfile = NULL;
         }
@@ -261,42 +297,79 @@ int main(int argc, char *argv[]) {
       else if(!strncmp(consoleinput,"mode Y",6)) {
         aptoptions.datab = 'Y';
       }
-      else if(!strncmp(consoleinput,"load",4)) {
+      else if(!strncmp(consoleinput,"load1",5)) {
         char newimage[1024];
-        printf("New image filename: ");
+        printf("New first image filename: ");
         scanf("%s",newimage);
         TgaImageHead NewTgaFile = OpenTgaImage(newimage);
         if(NewTgaFile.File != NULL) { 
           strncpy(aptoptions.filename,newimage,sizeof(newimage)-1);  
           imageline = 0;
-          CloseImageFile(ReadTga.File, RGfile);
-          if(ReadTga.File == NULL) {
-            ReadTga = NewTgaFile;
-            RGfile = NewTgaFile.File;
-            ReadTga.File = NULL;
+          if(AptImageSet==1) {
+            CloseImageFile(ReadTga.File, RGfile);
+            if(ReadTga.File == NULL) {
+              ReadTga = NewTgaFile;
+              RGfile = NewTgaFile.File;
+              ReadTga.File = NULL;
+            }
+            else {
+              ReadTga = NewTgaFile;
+              RGfile = NULL;            
+            }    
           }
-          else {
+          if(AptImageSet==2){
+            fclose(ReadTga.File);
             ReadTga = NewTgaFile;
-            RGfile = NULL;            
-          }    
+          }
+        }
+      }
+      else if(!strncmp(consoleinput,"load2",5)) {
+        char newimage[1024];
+        printf("New second image filename: ");
+        scanf("%s",newimage);
+        TgaImageHead NewTgaFile = OpenTgaImage(newimage);
+        if(NewTgaFile.File != NULL) { 
+          strncpy(aptoptions.secondfile,newimage,sizeof(newimage)-1);  
+          imageline_second = 0;
+          fclose(SecondTga.File);
+          SecondTga = NewTgaFile;   
         }
       }
       else if(!strncmp(consoleinput,"info",4)) {
         printf("Sound thread loop time: %lf sec\n",time_taken);
         printf("Output audio device: %s, ",aptoptions.device);
         printf("Sample rate: %d Hz, Bits: %d, Channels: %d\n",WF_SAMPLE_RATE,WF_SAMPLEBITS,WF_CHANNELS);
-        printf("Input image: %s , ",aptoptions.filename);
-        printf("Width: %dpx, Height: %dpx, ",ReadTga.Width, ReadTga.Height);
-        printf("Transmiting - ");
-        if(ReadTga.File==NULL){
-          printf("no\n");
+        printf("Image set: ");
+        if(AptImageSet==1) {
+          printf("single \n");
         }
-        else {
-          printf("yes\n");
+        else if (AptImageSet==2) {
+          printf("multi \n");
         }
-        printf("Time to transmit: %d sec, ",ReadTga.Height/2);
-        printf("Current line %d, %d%%, ",imageline,(int)(100*imageline/ReadTga.Height));
-        printf("Channel B data mode %c\n",aptoptions.datab);
+        if(AptImageSet==1) {
+          printf("Input image: %s , ",aptoptions.filename);
+          printf("Width: %dpx, Height: %dpx, ",ReadTga.Width, ReadTga.Height);
+          printf("Transmiting - ");
+          if(ReadTga.File==NULL){
+            printf("no\n");
+          }
+          else {
+            printf("yes\n");
+          }
+          printf("Time to transmit: %d sec, ",ReadTga.Height/2);
+          printf("Current line %d (%d%%) ",imageline,(int)(100*imageline/ReadTga.Height));
+          printf("Channel B data mode %c\n",aptoptions.datab);
+        } 
+        if(AptImageSet==2) {
+          printf("First image:  %s",aptoptions.filename);
+          printf("  Width: %dpx, Height: %dpx, ", ReadTga.Width, ReadTga.Height);
+          printf("Time to transmit: %d sec\n",ReadTga.Height/2);
+          printf("Second image: %s",aptoptions.secondfile);
+          printf("  Width: %dpx, Height: %dpx, ", SecondTga.Width, SecondTga.Height);
+          printf("Time to transmit: %d sec\n",SecondTga.Height/2);
+          printf("Current line %d (%d%%) + ",imageline,(int)(100*imageline/ReadTga.Height));
+          printf("%d (%d%%), ",imageline_second,(int)(100*imageline_second/SecondTga.Height));
+        }
         printf("Total transmitted frames %d, ",transmitted_frame);
         printf("Total transmitted minutes %d, ",transmitted_minutes);
         printf("Image loops: %d\n",transmitted_images);
@@ -318,9 +391,9 @@ int main(int argc, char *argv[]) {
 
 void Usage(char *p_name) {
   printf("NOAA automatic picture transmission (APT) encoder\n");
-  printf("Usage: %s (-i <file> | -I) [(-d <device> | -O) -m <mode> -lcr]\n",p_name);
+  printf("Usage: %s (-i <file> [-s <file>] | -I) [(-d <device> | -O) -m <mode> -lcr]\n",p_name);
   printf("  -i <filename> Input TGA image (909px width, 24bit RGB)\n");
-  //printf("  -s <filename> Second input TGA image (B channel, mode ignored)\n");
+  printf("  -s <filename> Second input TGA image (B channel, mode ignored)\n");
   printf("  -d <device>   OSS audio device (default /dev/dsp) or file\n");
   printf("  -m <mode>     Channel B data mode (R,G,B,N,Y)\n");
   printf("  -I            Read image data from stdin\n");
@@ -333,10 +406,23 @@ void Usage(char *p_name) {
 }
 
 void CloseImageFile(FILE *reg, FILE *alt) {
-  if(reg==NULL) {
-    fclose(alt);
+  if(AptImageSet==1) {
+    if(reg==NULL) {
+      fclose(alt);
+    }
+    else {
+      fclose(reg); 
+    }
   }
-  else {
-    fclose(reg); 
+  else if (AptImageSet==2) {
+    fclose(reg);
   }
+}
+
+void ClearConsole() {
+  rl_free_line_state();
+  rl_cleanup_after_signal();
+  RL_UNSETSTATE(RL_STATE_ISEARCH|RL_STATE_NSEARCH|RL_STATE_VIMOTION|RL_STATE_NUMERICARG|RL_STATE_MULTIKEY);
+  rl_line_buffer[rl_point = rl_end = rl_mark = 0] = 0;
+  printf("\n");  
 }

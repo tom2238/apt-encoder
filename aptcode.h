@@ -57,7 +57,8 @@ typedef struct {
 typedef struct {
   uint8_t Value[APT_LINE_SIZE];
 }AptLineAr;
-
+// Single or multi image set
+uint8_t AptImageSet;
 //Generate A channel sync pulses
 uint8_t AptSyncA(uint8_t word);
 //Generate B channel sync pulses
@@ -67,10 +68,10 @@ uint8_t AptMarkerA(uint8_t word, uint8_t minute);
 //Marker B channel
 uint8_t AptMarkerB(uint8_t word, uint8_t minute);
 //Create one line of apt, frame is number in 0 to 127, Seperate telemetry info for each channel
-AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image, uint8_t DataB);
+AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, AptTelemetry ChanB, FILE *image, FILE *secimage, uint8_t DataB);
 //Concat AptLine to AptLineAr
 AptLineAr ConcatAptLine(AptLine Apt);
 //Load one image line
-AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead tgahead, AptTelemetry telemA, AptTelemetry telemB, uint8_t DataB);
+AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead firstHead, TgaImageHead secHead, AptTelemetry telemA, AptTelemetry telemB, uint8_t DataB);
 
 #endif 

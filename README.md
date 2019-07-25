@@ -9,15 +9,18 @@ Information and description:
 
 ```
 NOAA automatic picture transmission (APT) encoder
-Usage: Debug/noaa_apt -i <file> [-d <device> -m <mode> -lcr]
+Usage: Debug/noaa_apt (-i <file> [-s <file>] | -I) [(-d <device> | -O) -m <mode> -lcr]
   -i <filename> Input TGA image (909px width, 24bit RGB)
+  -s <filename> Second input TGA image (B channel, mode ignored)
   -d <device>   OSS audio device (default /dev/dsp) or file
   -m <mode>     Channel B data mode (R,G,B,N,Y)
+  -I            Read image data from stdin
+  -O            Write audio data to stdout
   -l            Enable infinite image loop
   -c            Enable user console
   -r            Device is regular file (write WAV audio file)
   -h            Show this help
-                Build: 22:21:41 Jan 30 2019, GCC 5.3.0
+                Build: 00:35:30 Jul 26 2019, GCC 5.3.0
 ```
 
 * Run as: ```guest@porteus:~$ padsp noaa_apt -lci SourceTestImage.tga``` 
