@@ -81,8 +81,8 @@ unsigned int fread_int(char len, FILE *p){
     unsigned int byte=0;
     unsigned int val=0;
     unsigned int pc=0;
-    while (len-- > 0) {      
-        fread(&byte, 1, 1, p);      
+    while (len-- > 0) {
+        fread(&byte, 1, 1, p);
         val = val + (byte << 8*pc);
         pc++;      
     }

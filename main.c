@@ -30,6 +30,7 @@ void *SoundThread(void *vargp) {
   double carrier_phase=0; // current phase 
   double carrier_delta = WF_TPI*APT_CARRIER_F/WF_SAMPLE_RATE;  // delta phase of carrier 2400 Hz	
   //uint8_t AptDataBuffer[WF_SAMPLE_RATE/WF_BUFFER_DIV];
+  
   clock_t t; 
   while(1) {
     t = clock();
@@ -82,7 +83,7 @@ void *SoundThread(void *vargp) {
     if((SecondTga.File!=NULL)&&(AptImageSet==2))  {
       imageline_second++;
     }
-    if(imageline >= ReadTga.Height) {
+    if((imageline >= ReadTga.Height)&&(!aptoptions.usestdin)) { // Ignore in STDIN
       if(aptoptions.loop) {
         //printf("End of image. Another loop.\n");
         transmitted_images++;
@@ -99,7 +100,7 @@ void *SoundThread(void *vargp) {
         exit(0);
       }
     }
-    if((imageline_second >= SecondTga.Height)&&(AptImageSet==2)) {
+    if((imageline_second >= SecondTga.Height)&&(AptImageSet==2)&&(!aptoptions.usestdin)) { // Ignore in STDIN
       if(aptoptions.loop) {
         transmitted_images++;
         if(SecondTga.File!=NULL) {
@@ -115,7 +116,7 @@ void *SoundThread(void *vargp) {
         exit(0);
       }
     }
-    
+
     t = clock() - t;
     time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds 
          
@@ -128,6 +129,9 @@ int main(int argc, char *argv[]) {
     Usage(argv[0]);
     return 0;
   }
+  /*logfile = fopen("imgerror.log", "at");
+  fprintf(logfile,"(II) APT log file\n");
+  fflush(logfile);*/
   int opt = 0; 
   while ((opt = getopt(argc, argv, "hi:s:d:lcm:rIO")) != -1){
     switch (opt) {
@@ -184,17 +188,29 @@ int main(int argc, char *argv[]) {
   }	  
       
   if(strncmp(aptoptions.filename,_APT_FILE_NO_SET,4) == 0) {
-    printf("%s: required argument and option -- '-i <filename>'\n",argv[0]);
-    exit(2);
+    if(!aptoptions.usestdin) {
+      printf("%s: required argument and option -- '-i <filename>'\n",argv[0]);
+      exit(2);
+    }
   }
   // Open input images
-  ReadTga = OpenTgaImage(aptoptions.filename);
+  if(!aptoptions.usestdin) {
+    ReadTga = OpenTgaImage(aptoptions.filename);
+  }  
+  else {
+    ReadTga.File = stdin;
+  }
   AptImageSet = 1;
   if(ReadTga.File == NULL) {  // On error 
     exit(1);
   }
   if(strncmp(aptoptions.secondfile,_APT_FILE_NO_SET,4)) {
-   SecondTga = OpenTgaImage(aptoptions.secondfile);
+   if(!aptoptions.usestdin) {
+     SecondTga = OpenTgaImage(aptoptions.secondfile);
+   }
+   else {
+     SecondTga.File = stdin;
+   }
    AptImageSet = 2;
     if(SecondTga.File == NULL) {   // On error 
       exit(1);
@@ -205,6 +221,18 @@ int main(int argc, char *argv[]) {
     aptoptions.console=0;
     aptoptions.loop=0;
     aptoptions.device=_APT_AUDIO_STDOUT;
+  }
+  if(aptoptions.usestdin) { // Use STD IN
+    aptoptions.isfile=0;
+    aptoptions.console=0;
+    aptoptions.loop=0;
+    strncpy(aptoptions.filename,_APT_AUDIO_STDIN,sizeof(_APT_AUDIO_STDIN)-1);
+    if(AptImageSet==2) {
+      strncpy(aptoptions.secondfile,_APT_AUDIO_STDIN,sizeof(_APT_AUDIO_STDIN)-1);
+    }
+    if(fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) < 0) { // Non-blocking STDIN
+      printf("Error calling fcntl in %s\n", __FUNCTION__);
+    }
   }
   if(aptoptions.isfile) { // Write to WAV file
     aptoptions.console=0;

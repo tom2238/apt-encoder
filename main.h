@@ -47,5 +47,7 @@ void Usage(char *p_name);
 void CloseImageFile(FILE *reg, FILE *alt);
 // Clear Readline console
 void ClearConsole();
+// DEBUG !!!
+FILE *logfile;
 
 #endif
