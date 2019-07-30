@@ -125,6 +125,8 @@ void *SoundThread(void *vargp) {
 } 
 
 int main(int argc, char *argv[]) {
+  signal(SIGINT, SignalHandler);
+  signal(SIGTERM, SignalHandler);
   if(argc == 1){
     Usage(argv[0]);
     return 0;
@@ -453,4 +455,16 @@ void ClearConsole() {
   RL_UNSETSTATE(RL_STATE_ISEARCH|RL_STATE_NSEARCH|RL_STATE_VIMOTION|RL_STATE_NUMERICARG|RL_STATE_MULTIKEY);
   rl_line_buffer[rl_point = rl_end = rl_mark = 0] = 0;
   printf("\n");  
+}
+
+void SignalHandler(int number) {
+   printf("\nCaught signal %d ... ", number);
+   if(AptImageSet==1) {
+     CloseImageFile(ReadTga.File, RGfile); 
+   }
+   else if(AptImageSet==2){
+     fclose(ReadTga.File);
+   }
+   printf("abort\n");
+   exit(-1);
 }
