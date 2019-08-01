@@ -10,7 +10,7 @@ AptTelemetry TelemetryB = {0, 105, 105, 105, 105, 160, 150, 160, 60, 100, 135, 1
 double time_taken;
 TgaImageHead ReadTga;
 TgaImageHead SecondTga;
-AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,_APT_FILE_NO_SET,0,0,'N',0,0,0,0}; // Common APT settings
+AptOptSettings aptoptions = {_APT_AUDIO_DEVICE,_APT_FILE_NO_SET,_APT_FILE_NO_SET,0,0,'N',0,0,0,0,0}; // Common APT settings
 FILE *RGfile=NULL; 
 FILE *WAVfile=NULL;
 uint16_t imageline = 0;
@@ -21,21 +21,28 @@ uint32_t transmitted_minutes = 0;
 
 void *SoundThread(void *vargp) { 
   //Sound Buffer    
+  TgaImageHead NullTga;
   unsigned int i = 0; 
   int16_t carrier = 0;
   int16_t aptdata  = 0;
   uint8_t frame = 1;
   uint8_t currentline = 1;
+  uint8_t waittime = 0;
   AptLineAr ConvLine;
   double carrier_phase=0; // current phase 
   double carrier_delta = WF_TPI*APT_CARRIER_F/WF_SAMPLE_RATE;  // delta phase of carrier 2400 Hz	
   //uint8_t AptDataBuffer[WF_SAMPLE_RATE/WF_BUFFER_DIV];
-  
+  NullTga.File = NULL;
   clock_t t; 
   while(1) {
     t = clock();
-
-    ConvLine = AptTransImageLine(frame, currentline, ReadTga, SecondTga, TelemetryA, TelemetryB, aptoptions.datab); 
+    if(waittime<10) { // 5 seconds, 10 empty lines, No data (because NullTga)
+      ConvLine = AptTransImageLine(frame, currentline, NullTga, NullTga, TelemetryA, TelemetryB, aptoptions.datab);
+      waittime++;
+    }
+    else {
+      ConvLine = AptTransImageLine(frame, currentline, ReadTga, SecondTga, TelemetryA, TelemetryB, aptoptions.datab); 
+    }
     frame++;
     currentline++;
     if(frame > APT_FRAME_SIZE) {
@@ -46,7 +53,6 @@ void *SoundThread(void *vargp) {
       currentline = 1;
       transmitted_minutes++;
     }                   
-
     //0.5s One line wave syntheis
     for(i=0; i<WF_SAMPLE_RATE/WF_BUFFER_DIV; i++) {
       carrier = 32*(sin(carrier_phase)); //amplitude sine carrier wave           
@@ -127,6 +133,7 @@ void *SoundThread(void *vargp) {
 int main(int argc, char *argv[]) {
   signal(SIGINT, SignalHandler);
   signal(SIGTERM, SignalHandler);
+
   if(argc == 1){
     Usage(argv[0]);
     return 0;
@@ -135,7 +142,7 @@ int main(int argc, char *argv[]) {
   fprintf(logfile,"(II) APT log file\n");
   fflush(logfile);*/
   int opt = 0; 
-  while ((opt = getopt(argc, argv, "hi:s:d:lcm:rIO")) != -1){
+  while ((opt = getopt(argc, argv, "hi:s:d:lcm:rIOM")) != -1){
     switch (opt) {
     case 'h': //Help
       Usage(argv[0]);
@@ -179,6 +186,9 @@ int main(int argc, char *argv[]) {
       break;  
     case 'O': // User STDOUT for audio
       aptoptions.usestdout = 1;
+      break;
+    case 'M': // Multi mode on STDIN for image data
+      aptoptions.multistdin = 1;
       break;
     case '?': //Unknown option
       //printf("  Error: %c\n", optopt);
@@ -228,12 +238,16 @@ int main(int argc, char *argv[]) {
     aptoptions.isfile=0;
     aptoptions.console=0;
     aptoptions.loop=0;
+    if(aptoptions.multistdin) {
+      AptImageSet = 2;
+      SecondTga.File = stdin;
+    }
     strncpy(aptoptions.filename,_APT_AUDIO_STDIN,sizeof(_APT_AUDIO_STDIN)-1);
     if(AptImageSet==2) {
       strncpy(aptoptions.secondfile,_APT_AUDIO_STDIN,sizeof(_APT_AUDIO_STDIN)-1);
     }
-    if(fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) < 0) { // Non-blocking STDIN
-      printf("Error calling fcntl in %s\n", __FUNCTION__);
+    if(fcntl(STDIN_FILENO, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK) < 0) { // Non-blocking STDIN
+      printf("Error calling fcntl, non-blocking stdin\n");
     }
   }
   if(aptoptions.isfile) { // Write to WAV file
@@ -421,13 +435,14 @@ int main(int argc, char *argv[]) {
 
 void Usage(char *p_name) {
   printf("NOAA automatic picture transmission (APT) encoder\n");
-  printf("Usage: %s (-i <file> [-s <file>] | -I) [(-d <device> | -O) -m <mode> -lcr]\n",p_name);
+  printf("Usage: %s (-i <file> [-s <file>] | -I) [(-d <device> | -O) -m <mode> -lcrM]\n",p_name);
   printf("  -i <filename> Input TGA image (909px width, 24bit RGB)\n");
   printf("  -s <filename> Second input TGA image (B channel, mode ignored)\n");
   printf("  -d <device>   OSS audio device (default /dev/dsp) or file\n");
   printf("  -m <mode>     Channel B data mode (R,G,B,N,Y)\n");
   printf("  -I            Read image data from stdin\n");
   printf("  -O            Write audio data to stdout\n");
+  printf("  -M            Multi image reading from stdin\n");
   printf("  -l            Enable infinite image loop\n");
   printf("  -c            Enable user console\n");
   printf("  -r            Device is regular file (write WAV audio file)\n");

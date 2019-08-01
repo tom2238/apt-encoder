@@ -73,8 +73,8 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
     NewLine.SyncB[i] = AptSyncB(i);
   } 
   // Video A and Video B
-  for(j=0;j<APT_VIDEO_A;j++) {
-    if(AptImageSet == 1) {
+  if(AptImageSet == 1) {
+    for(j=0;j<APT_VIDEO_A;j++) {
       if(image==NULL) {
         NewLine.VideoA[j] = 0;
         NewLine.VideoB[j] = 0;
@@ -104,7 +104,9 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
         }      
       }
     } 
-    else if (AptImageSet == 2) {
+  }
+  else if (AptImageSet == 2) {
+    for(j=0;j<APT_VIDEO_A;j++) {
       if(image==NULL) {
         NewLine.VideoA[j] = 0;
       }
@@ -114,12 +116,14 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
         Gval = GetGreenSubPixel(pix);
         Bval = GetBlueSubPixel(pix);
         NewLine.VideoA[j] = Rval*0.302 + Gval*0.59 + Bval*0.11;
-      }
+      }  
+    }
+    for(j=0;j<APT_VIDEO_B;j++) {
       if(secimage==NULL) {
         NewLine.VideoB[j] = 0;
       }
       else { 
-        pix = ReadTGAPixel(secimage);
+        pix = ReadTGAPixel(secimage); 
         Rval = GetRedSubPixel(pix);
         Gval = GetGreenSubPixel(pix);
         Bval = GetBlueSubPixel(pix);
@@ -255,6 +259,5 @@ AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead fir
   
   AptTrans = CreateAptLine(frame, currentline, telemA, telemB, firstHead.File, secHead.File, DataB);			
   result = ConcatAptLine(AptTrans);
-
   return result;	
 }

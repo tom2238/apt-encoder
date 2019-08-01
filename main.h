@@ -33,6 +33,7 @@ typedef struct {
   uint8_t chdev;        // Custom audio device
   uint8_t usestdin;     // Read image data from STDIN
   uint8_t usestdout;    // Write audio to STDOUT
+  uint8_t multistdin;   // Multi mode on STDIN
 }AptOptSettings;
 
 typedef struct {
