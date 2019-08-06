@@ -54,6 +54,32 @@ typedef struct {
   uint8_t TelemetryB[APT_TELEMETRY_B];
 }AptLine;
 
+enum AptTelemetryData  {
+  APT_TEL_WEDGE1 = 31,   // Calibration values
+  APT_TEL_WEDGE2 = 63,   //
+  APT_TEL_WEDGE3 = 95,   //
+  APT_TEL_WEDGE4 = 127,  //
+  APT_TEL_WEDGE5 = 159,  //
+  APT_TEL_WEDGE6 = 191,  //
+  APT_TEL_WEDGE7 = 223,  //
+  APT_TEL_WEDGE8 = 255,  //
+  APT_TEL_ZEROMODREF = 0, // End calibration
+  APT_TEL_TEMP1 = 105,  // Black body temperatures
+  APT_TEL_TEMP2 = 105,  //
+  APT_TEL_TEMP3 = 105,  //
+  APT_TEL_TEMP4 = 105,  // End temperatures
+  APT_TEL_PATCHTEMP = 120, // 105 Kelvin
+  APT_TEL_BACKSCAN = 150, // IR CH 3,4,5
+  APT_TEL_CHANNELID = 31  // Channel 1
+};
+
+#define APT_CHANNELID_1  APT_TEL_WEDGE1 // Visible, 0.58 – 0.68 μm 
+#define APT_CHANNELID_2  APT_TEL_WEDGE2 // Near Infrared, 0.325 – 1.10 μm 
+#define APT_CHANNELID_3A APT_TEL_WEDGE3 // Thermal Infrared, 1.58 – 1.64 μm 
+#define APT_CHANNELID_3B APT_TEL_WEDGE6 // Thermal Infrared, 3.55 – 3.93 μm 
+#define APT_CHANNELID_4  APT_TEL_WEDGE4 // Thermal Infrared, 10.30 – 11.30 μm 
+#define APT_CHANNELID_5  APT_TEL_WEDGE5 // Thermal Infrared, 11.50 – 12.50 μm 
+
 typedef struct {
   uint8_t Value[APT_LINE_SIZE];
 }AptLineAr;
@@ -73,5 +99,6 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
 AptLineAr ConcatAptLine(AptLine Apt);
 //Load one image line
 AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead firstHead, TgaImageHead secHead, AptTelemetry telemA, AptTelemetry telemB, uint8_t DataB);
-
+//Create telemetry frame
+AptTelemetry CreateTelemetry(uint8_t temp1, uint8_t temp2, uint8_t temp3, uint8_t temp4, uint8_t backscan, uint8_t channel);
 #endif 

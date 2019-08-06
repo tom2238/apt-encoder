@@ -261,3 +261,24 @@ AptLineAr AptTransImageLine(uint8_t frame, uint8_t currentline, TgaImageHead fir
   result = ConcatAptLine(AptTrans);
   return result;	
 }
+
+AptTelemetry CreateTelemetry(uint8_t temp1, uint8_t temp2, uint8_t temp3, uint8_t temp4, uint8_t backscan, uint8_t channel) {
+  AptTelemetry result;
+  result.Wedge1 = APT_TEL_WEDGE1;
+  result.Wedge2 = APT_TEL_WEDGE2;
+  result.Wedge3 = APT_TEL_WEDGE3;
+  result.Wedge4 = APT_TEL_WEDGE4;
+  result.Wedge5 = APT_TEL_WEDGE5;
+  result.Wedge6 = APT_TEL_WEDGE6;
+  result.Wedge7 = APT_TEL_WEDGE7;
+  result.Wedge8 = APT_TEL_WEDGE8;
+  result.ZeroModRef = APT_TEL_ZEROMODREF;
+  result.Temp1 = temp1;
+  result.Temp2 = temp2;
+  result.Temp3 = temp3;
+  result.Temp4 = temp4;
+  result.BackScan = backscan;
+  result.ChannelID = channel;
+  result.PatchTemp = APT_TEL_PATCHTEMP;
+  return result;
+}

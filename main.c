@@ -4,8 +4,8 @@
 #include "audioset.h"
 #include "wavwrite.h"
 
-AptTelemetry TelemetryA = {0, 105, 105, 105, 105, 158, 0, 60, 60, 100, 135, 164, 192, 220, 245, 255};
-AptTelemetry TelemetryB = {0, 105, 105, 105, 105, 160, 150, 160, 60, 100, 135, 165, 192, 220, 245, 255};
+AptTelemetry TelemetryA;
+AptTelemetry TelemetryB;
 
 double time_taken;
 TgaImageHead ReadTga;
@@ -198,7 +198,10 @@ int main(int argc, char *argv[]) {
       return 0;  
     } 
   }	  
-      
+  // Set telemetry for A and B channels
+  TelemetryA = CreateTelemetry(APT_TEL_TEMP1, APT_TEL_TEMP2, APT_TEL_TEMP3, APT_TEL_TEMP4,0,APT_CHANNELID_1);
+  TelemetryB = CreateTelemetry(APT_TEL_TEMP1, APT_TEL_TEMP2, APT_TEL_TEMP3, APT_TEL_TEMP4,APT_TEL_BACKSCAN,APT_CHANNELID_1);
+  // Check argument
   if(strncmp(aptoptions.filename,_APT_FILE_NO_SET,4) == 0) {
     if(!aptoptions.usestdin) {
       printf("%s: required argument and option -- '-i <filename>'\n",argv[0]);
