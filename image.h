@@ -19,6 +19,23 @@ typedef struct {
   FILE *File;
 }TgaImageHead;
 
+typedef struct {
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+}RgbColor;
+
+typedef struct {
+  uint8_t h;
+  uint8_t s;
+  uint8_t v;
+}HsvColor;
+ 
+typedef struct {
+  uint8_t h;  // Hue
+  uint8_t sv; // Reduced saturation and value
+}AptColor;
+
 //Write test image
 int TestTGAImage(FILE *fp);
 //Write one 24 bit pixel
@@ -37,4 +54,12 @@ unsigned int fread_int(char len, FILE *p);
 TgaImageHead OpenTgaImage(char *filename);
 //Write transmitted image
 TgaImageHead WriteTgaImage(char *filename, TgaImageHead WriteImage);
+//Convert RGB to HSV color space
+HsvColor RgbToHsv(RgbColor rgb);
+//Convert HSV to RGB color space
+RgbColor HsvToRgb(HsvColor hsv);
+//Convert HSV to APT color space
+AptColor HsvToApt(HsvColor hsv, uint8_t bits);
+//Convert APT to HSV color space
+HsvColor AptToHsv(AptColor apt, uint8_t bits);
 #endif 

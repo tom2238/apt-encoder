@@ -148,3 +148,160 @@ TgaImageHead WriteTgaImage(char *filename, TgaImageHead WriteImage) {
   fwrite_int(WriteImage.ImageDescriptor,1,fileout);
   return WriteImage;  //now ready to write image data
 }
+
+HsvColor RgbToHsv(RgbColor rgb) {
+  HsvColor hsv;
+  uint8_t rgbMin, rgbMax;
+  // Get min/max
+  rgbMin = rgb.r < rgb.g ? (rgb.r < rgb.b ? rgb.r : rgb.b) : (rgb.g < rgb.b ? rgb.g : rgb.b);
+  rgbMax = rgb.r > rgb.g ? (rgb.r > rgb.b ? rgb.r : rgb.b) : (rgb.g > rgb.b ? rgb.g : rgb.b);
+  // Value
+  hsv.v = rgbMax;
+  if (hsv.v == 0) {
+    hsv.h = 0;
+    hsv.s = 0;
+    return hsv;
+  }
+  // Saturation
+  hsv.s = 255 * (long)(rgbMax - rgbMin) / hsv.v;
+  if (hsv.s == 0) {
+    hsv.h = 0;
+    return hsv;
+  }
+  // Hue
+  if (rgbMax == rgb.r) {
+    hsv.h = 0 + 43 * (rgb.g - rgb.b) / (rgbMax - rgbMin);
+  }
+  else if (rgbMax == rgb.g) {
+    hsv.h = 85 + 43 * (rgb.b - rgb.r) / (rgbMax - rgbMin);
+  }
+  else {
+    hsv.h = 171 + 43 * (rgb.r - rgb.g) / (rgbMax - rgbMin);
+  }
+  return hsv;
+}
+
+RgbColor HsvToRgb(HsvColor hsv) {
+  RgbColor rgb;
+  uint8_t region, remainder, p, q, t;
+  // Grayscale
+  if (hsv.s == 0) {
+    rgb.r = hsv.v;
+    rgb.g = hsv.v;
+    rgb.b = hsv.v;
+    return rgb;
+  }
+  // 60 degrees region
+  region = hsv.h / 43;
+  remainder = (hsv.h - (region * 43)) * 6; 
+
+  p = (hsv.v * (255 - hsv.s)) >> 8;
+  q = (hsv.v * (255 - ((hsv.s * remainder) >> 8))) >> 8;
+  t = (hsv.v * (255 - ((hsv.s * (255 - remainder)) >> 8))) >> 8;
+
+  switch (region) {
+    case 0:
+      rgb.r = hsv.v; rgb.g = t; rgb.b = p;
+      break;
+    case 1:
+      rgb.r = q; rgb.g = hsv.v; rgb.b = p;
+      break;
+    case 2:
+      rgb.r = p; rgb.g = hsv.v; rgb.b = t;
+      break;
+    case 3:
+      rgb.r = p; rgb.g = q; rgb.b = hsv.v;
+      break;
+    case 4:
+      rgb.r = t; rgb.g = p; rgb.b = hsv.v;
+      break;
+    default:
+      rgb.r = hsv.v; rgb.g = p; rgb.b = q;
+      break;
+  }
+
+  return rgb;
+}
+
+AptColor HsvToApt(HsvColor hsv, uint8_t bits) {
+  AptColor apt;
+  apt.h = hsv.h;
+  switch (bits) {
+    case 0:
+      apt.sv = (hsv.s & 0x00)+(hsv.v >> 0);
+      break;
+    case 1:
+      apt.sv = (hsv.s & 0x80)+(hsv.v >> 1);
+      break;
+    case 2:
+      apt.sv = (hsv.s & 0xC0)+(hsv.v >> 2);
+      break;  
+    case 4:
+      apt.sv = (hsv.s & 0xF0)+(hsv.v >> 4);
+      break;
+    case 5:
+      apt.sv = (hsv.s & 0xF8)+(hsv.v >> 5);
+      break;  
+    case 6:
+      apt.sv = (hsv.s & 0xFC)+(hsv.v >> 6);
+      break; 
+    case 7:
+      apt.sv = (hsv.s & 0xFE)+(hsv.v >> 7);
+      break;  
+    case 8:
+      apt.sv = (hsv.s & 0xFF)+(hsv.v >> 8);
+      break; 
+    case 3: 
+    default:
+      apt.sv = (hsv.s & 0xE0)+(hsv.v >> 3);
+      break;  
+  }
+  
+  return apt;
+}
+
+HsvColor AptToHsv(AptColor apt, uint8_t bits) {
+  HsvColor hsv;
+  hsv.h = apt.h;
+  switch (bits) {
+    case 0:
+      hsv.s = (apt.sv & 0x00);
+      hsv.v = (apt.sv & 0xFF) << 0;
+      break;
+    case 1:
+      hsv.s = (apt.sv & 0x80);
+      hsv.v = (apt.sv & 0x7F) << 1; 
+      break;
+    case 2:
+      hsv.s = (apt.sv & 0xC0);
+      hsv.v = (apt.sv & 0x3F) << 2;
+      break;  
+    case 4:
+      hsv.s = (apt.sv & 0xF0);
+      hsv.v = (apt.sv & 0x0F) << 4;
+      break;
+    case 5:
+      hsv.s = (apt.sv & 0xF8);
+      hsv.v = (apt.sv & 0x07) << 5;
+      break;
+    case 6:
+      hsv.s = (apt.sv & 0xFC);
+      hsv.v = (apt.sv & 0x03) << 6;
+      break;  
+    case 7:
+      hsv.s = (apt.sv & 0xFE);
+      hsv.v = (apt.sv & 0x01) << 7;
+      break;  
+    case 8:
+      hsv.s = (apt.sv & 0xFF);
+      hsv.v = (apt.sv & 0x00) << 8;
+      break;  
+    case 3:     
+    default: 
+      hsv.s = (apt.sv & 0xE0);
+      hsv.v = (apt.sv & 0x1F) << 3;
+      break; 
+  }
+  
+  return hsv;
+}
