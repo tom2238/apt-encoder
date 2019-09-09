@@ -171,6 +171,7 @@ int main(int argc, char *argv[]) {
         case 'B': //Blue
         case 'N': //Negative
         case 'Y': //Yb
+        case 'C': //Color
           aptoptions.datab = optarg[0];
           break;
         default:
@@ -344,6 +345,9 @@ int main(int argc, char *argv[]) {
       else if(!strncmp(consoleinput,"mode Y",6)) {
         aptoptions.datab = 'Y';
       }
+      else if(!strncmp(consoleinput,"mode C",6)) {
+        aptoptions.datab = 'C';
+      }
       else if(!strncmp(consoleinput,"load1",5)) {
         char newimage[1024];
         printf("New first image filename: ");
@@ -442,7 +446,7 @@ void Usage(char *p_name) {
   printf("  -i <filename> Input TGA image (909px width, 24bit RGB)\n");
   printf("  -s <filename> Second input TGA image (B channel, mode ignored)\n");
   printf("  -d <device>   OSS audio device (default /dev/dsp) or file\n");
-  printf("  -m <mode>     Channel B data mode (R,G,B,N,Y)\n");
+  printf("  -m <mode>     Channel B data mode (R,G,B,N,Y,C)\n");
   printf("  -I            Read image data from stdin\n");
   printf("  -O            Write audio data to stdout\n");
   printf("  -M            Multi image reading from stdin\n");

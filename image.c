@@ -305,3 +305,31 @@ HsvColor AptToHsv(AptColor apt, uint8_t bits) {
   
   return hsv;
 }
+
+AptColor RgbToApt(RgbColor rgb) {
+  AptColor apt;
+  uint8_t R = (rgb.r >> 4) & 0xF;
+  uint8_t G = (rgb.g >> 4) & 0xF;
+  uint8_t B = (rgb.b >> 4) & 0xF;
+  uint16_t val = (R << 8) + (G << 4) + B;
+  uint16_t pos = LUTFromRgb[val];
+  uint16_t y_val = pos % 64;
+  uint16_t x_val = (pos - y_val) / 64;
+  apt.h = (x_val & 0x3F) * 4;
+  apt.sv = (y_val & 0x3F) * 4; 
+  return apt;
+}
+
+RgbColor AptToRgb(AptColor apt) {
+  RgbColor rgb;
+  uint8_t x_val = (apt.h+2)/4;
+  uint8_t y_val = (apt.sv+2)/4;
+  if(x_val > 255) {x_val = 255;}
+  if(y_val > 255) {y_val = 255;}
+  uint16_t val = LUTFromApt[x_val][y_val];
+  uint8_t R = (val >> 8) & 0xF;
+  uint8_t G = (val >> 4) & 0xF;
+  uint8_t B = (val >> 0) & 0xF;
+  rgb.r = R * 17; rgb.g = G * 17; rgb.b = B * 17;
+  return rgb;
+}

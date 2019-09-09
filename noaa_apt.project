@@ -31,6 +31,7 @@
     <File Name="image.c"/>
     <File Name="wavwrite.c"/>
     <File Name="wavwrite.h"/>
+    <File Name="apt-colorm.c" ExcludeProjConfig="Debug"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

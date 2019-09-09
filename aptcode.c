@@ -66,6 +66,8 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
   uint8_t Rval = 0;
   uint8_t Gval = 0;
   uint8_t Bval = 0;
+  RgbColor pixel_r;
+  AptColor pixel_a;
   unsigned int pix;
   // Sync A and Sync B
   for(i=0;i<APT_SYNC_A;i++) {
@@ -84,7 +86,9 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
         Rval = GetRedSubPixel(pix);
         Gval = GetGreenSubPixel(pix);
         Bval = GetBlueSubPixel(pix);
-        NewLine.VideoA[j] = Rval*0.302 + Gval*0.59 + Bval*0.11;
+        if(DataB!='C') { 
+          NewLine.VideoA[j] = Rval*0.302 + Gval*0.59 + Bval*0.11;
+        }
         switch(DataB) {
           case 'R': //Red
             NewLine.VideoB[j] = Rval;
@@ -98,6 +102,14 @@ AptLine CreateAptLine(uint8_t frame, uint8_t currentline, AptTelemetry ChanA, Ap
           case 'Y': //Yb
             NewLine.VideoB[j] = (-38*Rval-74*Gval+112*Bval+128)/256 + 128; 
             break;
+          case 'C': //Color
+            pixel_r.r = Rval;
+            pixel_r.g = Gval;
+            pixel_r.b = Bval;
+            pixel_a = RgbToApt(pixel_r);
+            NewLine.VideoA[j] = pixel_a.h;
+            NewLine.VideoB[j] = pixel_a.sv;
+            break;  
           case 'N':  
           default : //Negative
             NewLine.VideoB[j] = 255-NewLine.VideoA[j];
