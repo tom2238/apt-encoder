@@ -1,0 +1,1 @@
+./Debug/main.c.o ./Debug/aptcode.c.o ./Debug/audioset.c.o ./Debug/image.c.o ./Debug/wavwrite.c.o
