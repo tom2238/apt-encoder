@@ -5,6 +5,7 @@ Load TGA image (24bit, RGB) and encode it to APT (Automatic Picture Transmission
 
 Information and description:
 * https://www.sigidwiki.com/wiki/Automatic_Picture_Transmission_%28APT%29
+* https://noaasis.noaa.gov/NOAASIS/pubs/Users_Guide-Building_Receive_Stations_March_2009.pdf
 
 
 ```
@@ -45,6 +46,11 @@ Mode use 12bit (4096 colors, square root of 4096 is 64) look up table. Each colo
 <tr><td>Channel B image</td><td><img src="./doc/139-color-b.png" width="500"></td></tr>
 <tr><td>Decoded color image</td><td><img src="./doc/139-color-decoded.png" width="500"></td></tr>
 </table>
+
+### TODO
+
+* Add support to ALSA/Portaudio
+* Build with CMake
 
 ### APT
 
