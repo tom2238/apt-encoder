@@ -25,8 +25,14 @@ Usage: Debug/noaa_apt (-i <file> [-s <file>] | -I) [(-d <device> | -O) -m <mode>
                 Build: 21:52:59 Aug 18 2019, GCC 5.3.0
 ```
 
+* Transmit one image and exit: ```guest@porteus:~$ padsp ./apt-encoder -i SourceTestImage.tga``` 
+* Single mode with loop and console: ```guest@porteus:~$ padsp ./apt-encoder -lci SourceTestImage.tga``` 
+* Multi mode with loop and console: ```guest@porteus:~$ padsp ./apt-encoder -lci SourceTestImage.tga -s 139.tga``` 
+* Write WAV audio file using color mode: ```guest@porteus:~$ ./apt-encoder -i SourceTestImage.tga -m C -rd audio.wav```
+* Read from stdin and write to stdout: ```guest@porteus:~$ cat SourceTestImage.tga | ./apt-encoder -OI | aplay -r 24000 -f S16_LE```
+* Transmit some noise: ```guest@porteus:~$ cat /dev/urandom | ./apt-encoder -OIM | aplay -r 24000 -f S16_LE```
 * Run as: ```guest@porteus:~$ padsp noaa_apt -lci SourceTestImage.tga``` 
-* Showing all modes:
+* Showing all modes (without C):
   Sync only -> Negative -> Red -> Green -> Blue -> Y -> Negative -> Red -> Green -> Blue -> Y (reload image) -> Negative -> Sync only -> Blue  
 
 <table>
@@ -50,7 +56,6 @@ Mode use 12bit (4096 colors, square root of 4096 is 64) look up table. Each colo
 ### TODO
 
 * Add support to ALSA/Portaudio
-* Build with CMake
 
 ### APT
 
