@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
         printf("info  - show information\n");
         printf("load1 - load new first image\n");
         printf("load2 - load new second image (only in multi)\n");
-        printf("mode  - channel B data mode (R,G,B,N,Y) (only in single)\n");
+        printf("mode  - channel B data mode (R,G,B,N,Y,C) (only in single)\n");
         printf("exit  - exit from APT\n") ;	
       }
       else if(!strncmp(consoleinput,"empty",5)) {

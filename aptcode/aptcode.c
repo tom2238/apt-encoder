@@ -1,4 +1,9 @@
-#include "main.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <math.h>
 #include "aptcode.h"
 
 uint8_t AptSyncA(uint8_t word) {

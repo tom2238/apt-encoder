@@ -1,4 +1,11 @@
-#include "main.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <math.h>
+#include <getopt.h>
 #include "image.h"
 #include "aptcode.h"
 
