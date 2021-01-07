@@ -319,15 +319,19 @@ int main(int argc, char *argv[]) {
         printf("exit  - exit from APT\n") ;	
       }
       else if(!strncmp(consoleinput,"empty",5)) {
-        if((ReadTga.File!=NULL)&&(strncmp(aptoptions.secondfile,_APT_FILE_NO_SET,4) == 0)) {
+        if((ReadTga.File!=NULL)&&(AptImageSet == 1)) {
           RGfile = ReadTga.File;
           ReadTga.File = NULL;
+        } else {
+          printf("empty function is available only in single image mode!\n");
         }
       }
       else if(!strncmp(consoleinput,"image",5)) {
-        if((RGfile!=NULL)&&(strncmp(aptoptions.secondfile,_APT_FILE_NO_SET,4) == 0)) {
+        if((RGfile!=NULL)&&(AptImageSet == 1)) {
           ReadTga.File = RGfile;
           RGfile = NULL;
+        } else {
+          printf("image function is available only in single image mode!\n");
         }
       }
       else if(!strncmp(consoleinput,"mode R",6)) {
@@ -375,15 +379,19 @@ int main(int argc, char *argv[]) {
         }
       }
       else if(!strncmp(consoleinput,"load2",5)) {
-        char newimage[1024];
-        printf("New second image filename: ");
-        scanf("%s",newimage);
-        TgaImageHead NewTgaFile = OpenTgaImage(newimage);
-        if(NewTgaFile.File != NULL) { 
-          strncpy(aptoptions.secondfile,newimage,sizeof(newimage)-1);  
-          imageline_second = 0;
-          fclose(SecondTga.File);
-          SecondTga = NewTgaFile;   
+        if(AptImageSet == 2) {
+          char newimage[1024];
+          printf("New second image filename: ");
+          scanf("%s",newimage);
+          TgaImageHead NewTgaFile = OpenTgaImage(newimage);
+          if(NewTgaFile.File != NULL) {
+            strncpy(aptoptions.secondfile,newimage,sizeof(newimage)-1);
+            imageline_second = 0;
+            fclose(SecondTga.File);
+            SecondTga = NewTgaFile;
+          }
+        } else {
+          printf("load2 function is available only in multi image mode!\n");
         }
       }
       else if(!strncmp(consoleinput,"info",4)) {
@@ -392,10 +400,10 @@ int main(int argc, char *argv[]) {
         printf("Sample rate: %d Hz, Bits: %d, Channels: %d\n",WF_SAMPLE_RATE,WF_SAMPLEBITS,WF_CHANNELS);
         printf("Image set: ");
         if(AptImageSet==1) {
-          printf("single \n");
+          printf("single - load2 function has no effect\n");
         }
         else if (AptImageSet==2) {
-          printf("multi \n");
+          printf("multi - mode, empty and image functions has no effect\n");
         }
         if(AptImageSet==1) {
           printf("Input image: %s , ",aptoptions.filename);
@@ -408,8 +416,8 @@ int main(int argc, char *argv[]) {
             printf("yes\n");
           }
           printf("Time to transmit: %d sec, ",ReadTga.Height/2);
-          printf("Current line %d (%d%%) ",imageline,(int)(100*imageline/ReadTga.Height));
-          printf("Channel B data mode %c\n",aptoptions.datab);
+          printf("Current line: %d (%d%%), ",imageline,(int)(100*imageline/ReadTga.Height));
+          printf("Channel B data mode: %c\n",aptoptions.datab);
         } 
         if(AptImageSet==2) {
           printf("First image:  %s",aptoptions.filename);
@@ -418,11 +426,11 @@ int main(int argc, char *argv[]) {
           printf("Second image: %s",aptoptions.secondfile);
           printf("  Width: %dpx, Height: %dpx, ", SecondTga.Width, SecondTga.Height);
           printf("Time to transmit: %d sec\n",SecondTga.Height/2);
-          printf("Current line %d (%d%%) + ",imageline,(int)(100*imageline/ReadTga.Height));
+          printf("Current line: %d (%d%%) + ",imageline,(int)(100*imageline/ReadTga.Height));
           printf("%d (%d%%), ",imageline_second,(int)(100*imageline_second/SecondTga.Height));
         }
-        printf("Total transmitted frames %d, ",transmitted_frame);
-        printf("Total transmitted minutes %d, ",transmitted_minutes);
+        printf("Total transmitted frames: %d, ",transmitted_frame);
+        printf("Total transmitted minutes: %d, ",transmitted_minutes);
         printf("Image loops: %d\n",transmitted_images);
       }	
       else {
